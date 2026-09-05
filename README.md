@@ -3,7 +3,7 @@
 強震モニタ (K-NET / KiK-net / S-net) の観測点データについて、色を読み取るピクセル位置
 (`point.center` + `point.offset`) を地図上でドラッグ編集するためのツールです。
 `OBSERVATION_POINT_EDITOR_REQUIREMENTS.md` の仕様に基づく Vite + React + TypeScript 実装です。
-
+ 
 ## 構成
 
 ```
