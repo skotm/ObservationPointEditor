@@ -51,7 +51,7 @@ export function useFileIO() {
     (points: CommonObservationPoint[], dataVersion: string, filename = 'observation_points.kmop') => {
       try {
         const bytes = serializeKmop(points, dataVersion);
-        const blob = new Blob([bytes], { type: 'application/octet-stream' });
+        const blob = new Blob([bytes as unknown as BlobPart], { type: 'application/octet-stream' });
         downloadBlob(blob, filename);
       } catch (e) {
         setError(`KMOP保存に失敗しました: ${String(e)}`);
