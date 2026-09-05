@@ -1,0 +1,14 @@
+{
+  "name": "obs-point-image-proxy",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250901.0",
+    "typescript": "~6.0.2",
+    "wrangler": "^4.20.0"
+  }
+}

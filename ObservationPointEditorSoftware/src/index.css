@@ -1,0 +1,86 @@
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap');
+
+:root {
+  /* Color: 深夜の観測所モニタールームをイメージした配色。
+     ベースは沈んだ藍炭色、警報色として震度モニタの赤〜橙、
+     操作系のアクセントはシアン。 */
+  --c-bg-0: #0b0f14;
+  --c-bg-1: #12181f;
+  --c-bg-2: #1a222b;
+  --c-bg-3: #232d38;
+  --c-border: #2c3846;
+  --c-text-0: #eef2f6;
+  --c-text-1: #a9b6c2;
+  --c-text-2: #6d7c8c;
+  --c-accent: #ff7a3d;
+  --c-accent-dim: #7a3d20;
+  --c-cyan: #3ddbd9;
+  --c-knet: #ff8c00;
+  --c-kiknet: #e02020;
+  --c-snet: #2f8fe0;
+  --c-suspended: #6d7c8c;
+  --c-danger: #e0405c;
+  --c-success: #35c07a;
+
+  --font-ui: 'Zen Kaku Gothic New', 'Hiragino Sans', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', monospace;
+
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--c-bg-0);
+  color: var(--c-text-0);
+  font-family: var(--font-ui);
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+}
+
+button {
+  font-family: inherit;
+}
+
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--c-cyan);
+  outline-offset: 1px;
+}
+
+::selection {
+  background: var(--c-accent-dim);
+}
+
+input,
+select {
+  background: var(--c-bg-2);
+  border: 1px solid var(--c-border);
+  color: var(--c-text-0);
+  border-radius: 4px;
+  padding: 5px 8px;
+  font-size: 13px;
+}
+
+.mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
