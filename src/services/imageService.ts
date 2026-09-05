@@ -29,22 +29,19 @@ export async function fetchKmoniLatestTimestamp(): Promise<string> {
   const json = (await res.json()) as { latest_time?: string; latest?: string };
   const latest = json.latest_time ?? json.latest;
   if (!latest) throw new ImageFetchError('最新時刻のレスポンス形式が想定外です');
-  return latest;
+  return normalizeKmoniTimestamp(latest);
 }
 
 /**
- * 強震モニタの背景画像 (震度分布 or 最大加速度) を取得し、Blob URL を返す。
- * @param timestamp "YYYYMMDDHHMMSS" 形式
+ * kmoniのAPIが返す時刻表記 ("2026/09/06 00:08:32" など) を、
+ * 画像取得エンドポイントが要求する "YYYYMMDDHHMMSS" 形式に変換する。
  */
-export async function fetchKmoniImage(
-  timestamp: string,
-  kind: KmoniImageKind = 'shindo',
-): Promise<string> {
-  ensureProxyConfigured();
-  const res = await fetch(`${PROXY_BASE_URL}/kmoni/image?timestamp=${timestamp}&kind=${kind}`);
-  if (!res.ok) throw new ImageFetchError(`画像の取得に失敗しました (HTTP ${res.status})`);
-  const blob = await res.blob();
-  return URL.createObjectURL(blob);
+function normalizeKmoniTimestamp(raw: string): string {
+  const digitsOnly = raw.replace(/\D/g, '');
+  if (digitsOnly.length !== 14) {
+    throw new ImageFetchError(`kmoniの時刻形式が想定外です: ${raw}`);
+  }
+  return digitsOnly;
 }
 
 /**
