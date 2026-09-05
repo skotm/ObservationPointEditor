@@ -7,7 +7,7 @@ compatibility_date = "2025-09-01"
 
 [vars]
 # GitHub Pages のURL (カスタムドメイン含む) をカンマ区切りで指定してください。
-ALLOWED_ORIGINS = "https://<your-github-username>.github.io,http://localhost:5173"
+ALLOWED_ORIGINS = "https://skotm.github.io,http://localhost:5173"
 
 # 海しるタイルのデータ取得に追加の安全マージン(分)を設けたい場合に設定 (既定 0)。
 UMISHIRU_DELAY_MINUTES = "0"
