@@ -1,5 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { MouseEvent as ReactMouseEvent, WheelEvent as ReactWheelEvent } from 'react';
+import type {
+  MouseEvent as ReactMouseEvent,
+  Touch as ReactTouch,
+  TouchEvent as ReactTouchEvent,
+  WheelEvent as ReactWheelEvent,
+} from 'react';
 import type { CommonObservationPoint } from '@/types';
 import { TYPE_MARKER_COLOR } from '@/utils/shindoColorScale';
 import {
@@ -9,6 +14,7 @@ import {
   findPointsNear,
   getReadingPixel,
   imagePixelToScreen,
+  roundToPrecision,
   screenToImagePixel,
 } from '@/utils/geometry';
 
@@ -16,6 +22,7 @@ interface MapCanvasProps {
   points: CommonObservationPoint[];
   selectedCode: string | null;
   backgroundImageUrl: string | null;
+  decimalMode: boolean;
   onSelectPoint: (code: string | null) => void;
   onMultiCandidates: (points: CommonObservationPoint[]) => void;
   onMovePoint: (code: string, center: { x: number; y: number }) => void;
@@ -23,11 +30,27 @@ interface MapCanvasProps {
 }
 
 const HIT_RADIUS_PX = 10;
+/** タッチ操作は指が太い分、マウスより広めの当たり判定にする */
+const TOUCH_HIT_RADIUS_PX = 22;
+
+interface PanState {
+  startX: number;
+  startY: number;
+  startPan: { x: number; y: number };
+}
+
+interface PinchState {
+  startDist: number;
+  startZoom: number;
+  startPan: { x: number; y: number };
+  startMid: { x: number; y: number };
+}
 
 export function MapCanvas({
   points,
   selectedCode,
   backgroundImageUrl,
+  decimalMode,
   onSelectPoint,
   onMultiCandidates,
   onMovePoint,
@@ -42,7 +65,14 @@ export function MapCanvas({
   const [imgLoaded, setImgLoaded] = useState(false);
 
   const draggingRef = useRef<{ code: string; part: 'center' } | null>(null);
-  const panningRef = useRef<{ startX: number; startY: number; startPan: { x: number; y: number } } | null>(null);
+  const panningRef = useRef<PanState | null>(null);
+  const pinchRef = useRef<PinchState | null>(null);
+  // 最新の pan/zoom をイベントハンドラ内から同期的に参照するための ref
+  // (setState は非同期のため、同一ジェスチャー内で連続して読み書きする場合に必要)
+  const panZoomRef = useRef({ pan, zoom });
+  useEffect(() => {
+    panZoomRef.current = { pan, zoom };
+  }, [pan, zoom]);
 
   // 背景画像読み込み
   useEffect(() => {
@@ -128,15 +158,20 @@ export function MapCanvas({
     return () => window.removeEventListener('resize', onResize);
   }, [draw]);
 
+  const getPixelFromPoint = useCallback((clientX: number, clientY: number) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return null;
+    const rect = canvas.getBoundingClientRect();
+    const { pan: curPan, zoom: curZoom } = panZoomRef.current;
+    return screenToImagePixel(clientX, clientY, rect, curPan.x, curPan.y, curZoom);
+  }, []);
+
   const getPixelFromEvent = useCallback(
-    (e: ReactMouseEvent) => {
-      const canvas = canvasRef.current;
-      if (!canvas) return null;
-      const rect = canvas.getBoundingClientRect();
-      return screenToImagePixel(e.clientX, e.clientY, rect, pan.x, pan.y, zoom);
-    },
-    [pan, zoom],
+    (e: ReactMouseEvent) => getPixelFromPoint(e.clientX, e.clientY),
+    [getPixelFromPoint],
   );
+
+  // ---------------- マウス操作 ----------------
 
   const handleMouseDown = useCallback(
     (e: ReactMouseEvent) => {
@@ -178,10 +213,13 @@ export function MapCanvas({
 
       if (draggingRef.current) {
         if (!pixel) return;
-        onMovePoint(draggingRef.current.code, { x: Math.round(pixel.x), y: Math.round(pixel.y) });
+        onMovePoint(draggingRef.current.code, {
+            x: roundToPrecision(pixel.x, decimalMode),
+            y: roundToPrecision(pixel.y, decimalMode),
+          });
       }
     },
-    [getPixelFromEvent, onDebugInfo, onMovePoint],
+    [decimalMode, getPixelFromEvent, onDebugInfo, onMovePoint],
   );
 
   const handleMouseUp = useCallback(() => {
@@ -214,6 +252,140 @@ export function MapCanvas({
     [pan, zoom],
   );
 
+  // ---------------- タッチ操作 ----------------
+  // 1本指: 観測点上なら移動、それ以外はパン (Altキーがないため)
+  // 2本指: ピンチでズーム (中点を中心に拡大縮小)
+
+  const touchDistance = (t1: ReactTouch, t2: ReactTouch): number => {
+    const dx = t1.clientX - t2.clientX;
+    const dy = t1.clientY - t2.clientY;
+    return Math.sqrt(dx * dx + dy * dy);
+  };
+
+  const touchMidpoint = (t1: ReactTouch, t2: ReactTouch, rect: DOMRect) => ({
+    x: (t1.clientX + t2.clientX) / 2 - rect.left,
+    y: (t1.clientY + t2.clientY) / 2 - rect.top,
+  });
+
+  const handleTouchStart = useCallback(
+    (e: ReactTouchEvent) => {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+
+      if (e.touches.length >= 2) {
+        // 2本指ジェスチャー開始 (ドラッグ/パンは中断してピンチへ切り替え)
+        draggingRef.current = null;
+        panningRef.current = null;
+        const rect = canvas.getBoundingClientRect();
+        const [t1, t2] = [e.touches[0], e.touches[1]];
+        const { pan: curPan, zoom: curZoom } = panZoomRef.current;
+        pinchRef.current = {
+          startDist: touchDistance(t1, t2),
+          startZoom: curZoom,
+          startPan: curPan,
+          startMid: touchMidpoint(t1, t2, rect),
+        };
+        return;
+      }
+
+      if (e.touches.length === 1) {
+        pinchRef.current = null;
+        const touch = e.touches[0];
+        const pixel = getPixelFromPoint(touch.clientX, touch.clientY);
+        if (!pixel) return;
+
+        const { zoom: curZoom, pan: curPan } = panZoomRef.current;
+        const candidates = findPointsNear(points, pixel, TOUCH_HIT_RADIUS_PX / curZoom);
+        if (candidates.length === 0) {
+          // 観測点がない位置 → パン開始
+          panningRef.current = { startX: touch.clientX, startY: touch.clientY, startPan: curPan };
+          return;
+        }
+        if (candidates.length === 1) {
+          onSelectPoint(candidates[0].code);
+          draggingRef.current = { code: candidates[0].code, part: 'center' };
+        } else {
+          onMultiCandidates(candidates);
+        }
+      }
+    },
+    [getPixelFromPoint, onMultiCandidates, onSelectPoint, points],
+  );
+
+  const handleTouchMove = useCallback(
+    (e: ReactTouchEvent) => {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+
+      if (e.touches.length >= 2 && pinchRef.current) {
+        e.preventDefault();
+        const rect = canvas.getBoundingClientRect();
+        const [t1, t2] = [e.touches[0], e.touches[1]];
+        const newDist = touchDistance(t1, t2);
+        const newMid = touchMidpoint(t1, t2, rect);
+        const { startDist, startZoom, startPan, startMid } = pinchRef.current;
+
+        const scale = newDist / startDist;
+        const newZoom = clamp(startZoom * scale, MIN_ZOOM, MAX_ZOOM);
+
+        // ピンチ開始時の中点を基準にズーム・パンを更新
+        const imgX = (startMid.x - startPan.x) / startZoom;
+        const imgY = (startMid.y - startPan.y) / startZoom;
+        const newPan = {
+          x: newMid.x - imgX * newZoom,
+          y: newMid.y - imgY * newZoom,
+        };
+        setZoom(newZoom);
+        setPan(newPan);
+        return;
+      }
+
+      if (e.touches.length === 1) {
+        const touch = e.touches[0];
+
+        if (panningRef.current) {
+          e.preventDefault();
+          const dx = touch.clientX - panningRef.current.startX;
+          const dy = touch.clientY - panningRef.current.startY;
+          setPan({ x: panningRef.current.startPan.x + dx, y: panningRef.current.startPan.y + dy });
+          return;
+        }
+
+        if (draggingRef.current) {
+          e.preventDefault();
+          const pixel = getPixelFromPoint(touch.clientX, touch.clientY);
+          if (!pixel) return;
+          onMovePoint(draggingRef.current.code, {
+            x: roundToPrecision(pixel.x, decimalMode),
+            y: roundToPrecision(pixel.y, decimalMode),
+          });
+        }
+      }
+    },
+    [decimalMode, getPixelFromPoint, onMovePoint],
+  );
+
+  const handleTouchEnd = useCallback((e: ReactTouchEvent) => {
+    const canvas = canvasRef.current;
+    const remaining = e.touches.length;
+
+    if (remaining === 0) {
+      draggingRef.current = null;
+      panningRef.current = null;
+      pinchRef.current = null;
+      return;
+    }
+
+    // 2本指 → 1本指に減った場合、残った指を新たな基準にパンとして継続する
+    if (remaining === 1 && canvas) {
+      pinchRef.current = null;
+      draggingRef.current = null;
+      const touch = e.touches[0];
+      const { pan: curPan } = panZoomRef.current;
+      panningRef.current = { startX: touch.clientX, startY: touch.clientY, startPan: curPan };
+    }
+  }, []);
+
   return (
     <div
       ref={containerRef}
@@ -226,7 +398,11 @@ export function MapCanvas({
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
         onWheel={handleWheel}
-        style={{ display: 'block' }}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        onTouchCancel={handleTouchEnd}
+        style={{ display: 'block', touchAction: 'none' }}
       />
       <div
         style={{
@@ -242,7 +418,7 @@ export function MapCanvas({
         }}
         className="mono"
       >
-        zoom {zoom.toFixed(2)}x ・ Alt+ドラッグでパン ・ ホイールでズーム
+        zoom {zoom.toFixed(2)}x ・ Alt+ドラッグ/1本指でパン ・ ホイール/ピンチでズーム
       </div>
     </div>
   );

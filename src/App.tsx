@@ -33,6 +33,7 @@ export default function App() {
   const fileIO = useFileIO();
 
   const [backgroundUrl, setBackgroundUrl] = useState<string | null>(null);
+  const [decimalMode, setDecimalMode] = useState(false);
   const [candidates, setCandidates] = useState<CommonObservationPoint[] | null>(null);
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
   const [consolidationResult, setConsolidationResult] = useState<ConsolidationResult | null>(null);
@@ -208,11 +209,12 @@ export default function App() {
     onEscape: () => store.setSelectedCode(null),
     onArrowMove: (dx, dy, fine) => {
       if (!store.selectedPoint?.point) return;
-      const step = fine ? 1 : 5;
+      const step = decimalMode ? (fine ? 0.1 : 1) : fine ? 1 : 5;
       const p = store.selectedPoint.point;
+      const round = (v: number) => (decimalMode ? Math.round(v * 10) / 10 : Math.round(v));
       store.applyPointChange(store.selectedPoint.code, {
         center: p.center,
-        offset: { x: p.offset.x + dx * step, y: p.offset.y + dy * step },
+        offset: { x: round(p.offset.x + dx * step), y: round(p.offset.y + dy * step) },
       });
     },
   });
@@ -251,6 +253,8 @@ export default function App() {
           onPatchSelected={(patch) => store.selectedPoint && store.patchPoint(store.selectedPoint.code, patch)}
           onAddPoint={store.addPoint}
           onDeleteSelected={() => store.selectedCode && store.removeSelected(new Set([store.selectedCode]))}
+          decimalMode={decimalMode}
+          onDecimalModeChange={setDecimalMode}
         />
 
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
@@ -259,6 +263,7 @@ export default function App() {
               points={store.filteredData.points}
               selectedCode={store.selectedCode}
               backgroundImageUrl={backgroundUrl}
+              decimalMode={decimalMode}
               onSelectPoint={handleSelectPoint}
               onMultiCandidates={handleMultiCandidates}
               onMovePoint={handleMovePoint}

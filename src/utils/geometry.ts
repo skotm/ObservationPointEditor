@@ -68,7 +68,15 @@ export function clamp(value: number, min: number, max: number): number {
 }
 
 export const MIN_ZOOM = 1.0;
-export const MAX_ZOOM = 10.0;
+export const MAX_ZOOM = 15.0;
+
+/**
+ * 座標を指定精度に丸める。
+ * decimalMode が true の場合は小数第一位まで、false の場合は整数に丸める。
+ */
+export function roundToPrecision(value: number, decimalMode: boolean): number {
+  return decimalMode ? Math.round(value * 10) / 10 : Math.round(value);
+}
 
 /** 3x3 範囲のピクセル座標一覧を返す (観測点の読み取り範囲) */
 export function get3x3Range(center: Point2D): Point2D[] {

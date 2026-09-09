@@ -12,6 +12,8 @@ interface LeftPanelProps {
   onPatchSelected: (patch: Partial<CommonObservationPoint>) => void;
   onAddPoint: () => void;
   onDeleteSelected: () => void;
+  decimalMode: boolean;
+  onDecimalModeChange: (value: boolean) => void;
 }
 
 export function LeftPanel({
@@ -24,6 +26,8 @@ export function LeftPanel({
   onPatchSelected,
   onAddPoint,
   onDeleteSelected,
+  decimalMode,
+  onDecimalModeChange,
 }: LeftPanelProps) {
   return (
     <div
@@ -95,6 +99,22 @@ export function LeftPanel({
             選択中の観測点を削除
           </button>
         )}
+      </Section>
+
+      <Section title="座標設定">
+        <label style={checkboxRow}>
+          <input
+            type="checkbox"
+            checked={decimalMode}
+            onChange={(e) => onDecimalModeChange(e.target.checked)}
+          />
+          小数点モード (ピクセル座標を小数第一位まで指定)
+        </label>
+        <div style={{ fontSize: 11, color: 'var(--c-text-2)' }}>
+          {decimalMode
+            ? 'ドラッグ・矢印キー操作の座標が 0.1px 単位になります。'
+            : 'ドラッグ・矢印キー操作の座標が整数(1px単位)になります。'}
+        </div>
       </Section>
 
       {selectedPoint ? (
@@ -169,6 +189,7 @@ export function LeftPanel({
                 <input
                   type="number"
                   value={selectedPoint.point.center.x}
+                  step={decimalMode ? '0.1' : '1'}
                   onChange={(e) =>
                     onPatchSelected({
                       point: {
@@ -183,6 +204,7 @@ export function LeftPanel({
                 <input
                   type="number"
                   value={selectedPoint.point.center.y}
+                  step={decimalMode ? '0.1' : '1'}
                   onChange={(e) =>
                     onPatchSelected({
                       point: {
@@ -207,6 +229,7 @@ export function LeftPanel({
                 <input
                   type="number"
                   value={selectedPoint.point.offset.x}
+                  step={decimalMode ? '0.1' : '1'}
                   onChange={(e) =>
                     onPatchSelected({
                       point: {
@@ -221,6 +244,7 @@ export function LeftPanel({
                 <input
                   type="number"
                   value={selectedPoint.point.offset.y}
+                  step={decimalMode ? '0.1' : '1'}
                   onChange={(e) =>
                     onPatchSelected({
                       point: {
