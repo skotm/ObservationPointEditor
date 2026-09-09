@@ -33,6 +33,14 @@ export interface CommonObservationPoint {
   location: Location;
   point?: KyoshinImagePoint;
   isSuspended: boolean;
+  /**
+   * 読み込み元ファイルの元のJSONオブジェクト (存在する場合)。
+   * 保存時にこれをベースにして編集内容を上書きすることで、
+   * "center_point" キーや、このツールが認識しない追加フィールド
+   * (例: japanese_coordinate_system_location) をそのまま維持する。
+   * 新規追加した観測点にはこのフィールドは存在しない (標準形式で保存される)。
+   */
+  raw?: Record<string, unknown>;
 }
 
 /** JSON シリアライズ時 (snake_case) の形 */
