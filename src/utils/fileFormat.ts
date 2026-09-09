@@ -6,7 +6,19 @@ import {
   type ObservationPointType,
 } from '@/types';
 
-const VALID_TYPES: ObservationPointType[] = ['k_net', 'kik_net', 's_net'];
+/**
+ * 観測点種別の表記ゆれを吸収して正規化する。
+ * 大文字小文字・アンダースコア/ハイフン/スペースの有無を問わず判定する。
+ * 例: "kiK_net" / "KIK-NET" / "kiknet" / "Kik Net" → すべて "kik_net" と判定
+ */
+function normalizeObservationPointType(raw: unknown): ObservationPointType | null {
+  if (typeof raw !== 'string') return null;
+  const cleaned = raw.toLowerCase().replace(/[\s_-]/g, '');
+  if (cleaned === 'knet') return 'k_net';
+  if (cleaned === 'kiknet') return 'kik_net';
+  if (cleaned === 'snet') return 's_net';
+  return null;
+}
 
 export function toJson(point: CommonObservationPoint): CommonObservationPointJson {
   return {
@@ -36,7 +48,8 @@ export function fromJson(json: CommonObservationPointJson, lineHint?: number): C
       `観測点データの形式が不正です${lineHint ? ` (要素 #${lineHint})` : ''}`,
     );
   }
-  if (!VALID_TYPES.includes(json.type)) {
+  const normalizedType = normalizeObservationPointType(json.type);
+  if (!normalizedType) {
     throw new FileOperationException(
       FileOperationError.InvalidFormat,
       `不明な観測点種別です: ${String(json.type)}`,
@@ -50,7 +63,7 @@ export function fromJson(json: CommonObservationPointJson, lineHint?: number): C
   }
 
   return {
-    type: json.type,
+    type: normalizedType,
     code: json.code,
     name: json.name ?? '',
     region: json.region ?? '',
