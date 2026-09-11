@@ -15,6 +15,10 @@ interface LeftPanelProps {
   onDeleteSelected: () => void;
   decimalMode: boolean;
   onDecimalModeChange: (value: boolean) => void;
+  showGrid: boolean;
+  onShowGridChange: (value: boolean) => void;
+  showReadingArea: boolean;
+  onShowReadingAreaChange: (value: boolean) => void;
 }
 
 export function LeftPanel({
@@ -29,6 +33,10 @@ export function LeftPanel({
   onDeleteSelected,
   decimalMode,
   onDecimalModeChange,
+  showGrid,
+  onShowGridChange,
+  showReadingArea,
+  onShowReadingAreaChange,
 }: LeftPanelProps) {
   return (
     <div
@@ -111,16 +119,30 @@ export function LeftPanel({
       </Section>
 
       <Section title="座標設定">
-        <Toggle
-          checked={decimalMode}
-          onChange={onDecimalModeChange}
-          label="小数点モード"
-          description={
-            decimalMode
-              ? '座標を0.1px単位で指定します'
-              : '座標を整数(1px単位)で指定します'
-          }
-        />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <Toggle
+            checked={decimalMode}
+            onChange={onDecimalModeChange}
+            label="小数点モード"
+            description={
+              decimalMode
+                ? '座標を0.1px単位で指定します'
+                : '座標を整数(1px単位)で指定します'
+            }
+          />
+          <Toggle
+            checked={showGrid}
+            onChange={onShowGridChange}
+            label="ピクセルグリッド"
+            description="地図を4倍以上に拡大すると、1px単位のグリッド線が表示されます"
+          />
+          <Toggle
+            checked={showReadingArea}
+            onChange={onShowReadingAreaChange}
+            label="読み取り範囲を表示"
+            description="各観測点が色を読み取る3×3ピクセル範囲を、種別ごとの色の点線で表示します"
+          />
+        </div>
       </Section>
 
       {selectedPoint ? (

@@ -35,6 +35,8 @@ export default function App() {
 
   const [backgroundUrl, setBackgroundUrl] = useState<string | null>(null);
   const [decimalMode, setDecimalMode] = useState(false);
+  const [showGrid, setShowGrid] = useState(true);
+  const [showReadingArea, setShowReadingArea] = useState(true);
   const [candidates, setCandidates] = useState<CommonObservationPoint[] | null>(null);
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
   const [consolidationResult, setConsolidationResult] = useState<ConsolidationResult | null>(null);
@@ -264,6 +266,10 @@ export default function App() {
           onDeleteSelected={() => store.selectedCode && store.removeSelected(new Set([store.selectedCode]))}
           decimalMode={decimalMode}
           onDecimalModeChange={setDecimalMode}
+          showGrid={showGrid}
+          onShowGridChange={setShowGrid}
+          showReadingArea={showReadingArea}
+          onShowReadingAreaChange={setShowReadingArea}
         />
 
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
@@ -273,6 +279,8 @@ export default function App() {
               selectedCode={store.selectedCode}
               backgroundImageUrl={backgroundUrl}
               decimalMode={decimalMode}
+              showGrid={showGrid}
+              showReadingArea={showReadingArea}
               onSelectPoint={handleSelectPoint}
               onMultiCandidates={handleMultiCandidates}
               onMovePoint={handleMovePoint}

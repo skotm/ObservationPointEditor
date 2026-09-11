@@ -23,6 +23,8 @@ interface MapCanvasProps {
   selectedCode: string | null;
   backgroundImageUrl: string | null;
   decimalMode: boolean;
+  showGrid: boolean;
+  showReadingArea: boolean;
   onSelectPoint: (code: string | null) => void;
   onMultiCandidates: (points: CommonObservationPoint[]) => void;
   onMovePoint: (code: string, center: { x: number; y: number }) => void;
@@ -32,6 +34,10 @@ interface MapCanvasProps {
 const HIT_RADIUS_PX = 10;
 /** タッチ操作は指が太い分、マウスより広めの当たり判定にする */
 const TOUCH_HIT_RADIUS_PX = 22;
+/** このズーム倍率未満ではグリッドが密集しすぎて見づらいため非表示にする */
+const GRID_MIN_ZOOM = 4;
+/** 10ピクセルごとに少し目立つ「主グリッド線」を引く間隔 */
+const GRID_MAJOR_INTERVAL = 10;
 
 interface PanState {
   startX: number;
@@ -51,6 +57,8 @@ export function MapCanvas({
   selectedCode,
   backgroundImageUrl,
   decimalMode,
+  showGrid,
+  showReadingArea,
   onSelectPoint,
   onMultiCandidates,
   onMovePoint,
@@ -114,6 +122,38 @@ export function MapCanvas({
       ctx.fillText('背景画像が読み込まれていません', 16, 24);
     }
 
+    // ピクセルグリッド (十分ズームしている場合のみ表示)
+    if (showGrid && zoom >= GRID_MIN_ZOOM) {
+      const minX = Math.floor(-pan.x / zoom);
+      const maxX = Math.ceil((w - pan.x) / zoom);
+      const minY = Math.floor(-pan.y / zoom);
+      const maxY = Math.ceil((h - pan.y) / zoom);
+
+      ctx.save();
+      ctx.lineWidth = 1;
+      for (let x = minX; x <= maxX; x++) {
+        const screenX = Math.round(x * zoom + pan.x) + 0.5;
+        if (screenX < -1 || screenX > w + 1) continue;
+        const isMajor = x % GRID_MAJOR_INTERVAL === 0;
+        ctx.strokeStyle = isMajor ? 'rgba(255, 255, 255, 0.28)' : 'rgba(255, 255, 255, 0.09)';
+        ctx.beginPath();
+        ctx.moveTo(screenX, 0);
+        ctx.lineTo(screenX, h);
+        ctx.stroke();
+      }
+      for (let y = minY; y <= maxY; y++) {
+        const screenY = Math.round(y * zoom + pan.y) + 0.5;
+        if (screenY < -1 || screenY > h + 1) continue;
+        const isMajor = y % GRID_MAJOR_INTERVAL === 0;
+        ctx.strokeStyle = isMajor ? 'rgba(255, 255, 255, 0.28)' : 'rgba(255, 255, 255, 0.09)';
+        ctx.beginPath();
+        ctx.moveTo(0, screenY);
+        ctx.lineTo(w, screenY);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
     for (const p of points) {
       const reading = getReadingPixel(p);
       if (!reading) continue;
@@ -122,6 +162,23 @@ export function MapCanvas({
 
       const isSelected = p.code === selectedCode;
       const color = p.isSuspended ? TYPE_MARKER_COLOR.suspended : TYPE_MARKER_COLOR[p.type];
+
+      // 読み取り範囲 (3x3ピクセル) を種別カラーの点線枠で表示する
+      if (showReadingArea) {
+        const cellSize = zoom;
+        ctx.save();
+        ctx.setLineDash([Math.max(2, zoom * 0.3), Math.max(2, zoom * 0.3)]);
+        ctx.strokeStyle = color;
+        ctx.globalAlpha = p.isSuspended ? 0.45 : 0.85;
+        ctx.lineWidth = isSelected ? 2 : 1;
+        ctx.strokeRect(
+          screenPos.x - 1.5 * cellSize,
+          screenPos.y - 1.5 * cellSize,
+          cellSize * 3,
+          cellSize * 3,
+        );
+        ctx.restore();
+      }
 
       ctx.beginPath();
       ctx.arc(screenPos.x, screenPos.y, isSelected ? 6 : 4, 0, Math.PI * 2);
@@ -134,10 +191,10 @@ export function MapCanvas({
         ctx.lineWidth = 2;
         ctx.stroke();
 
-        // 3x3 読み取り範囲のハイライト
+        // 選択中の観測点は読み取り範囲を実線・シアンで強調する
         const cellSize = zoom;
-        ctx.strokeStyle = 'rgba(64, 216, 208, 0.6)';
-        ctx.lineWidth = 1;
+        ctx.strokeStyle = 'rgba(64, 216, 208, 0.8)';
+        ctx.lineWidth = 1.5;
         ctx.strokeRect(
           screenPos.x - 1.5 * cellSize,
           screenPos.y - 1.5 * cellSize,
@@ -146,7 +203,7 @@ export function MapCanvas({
         );
       }
     }
-  }, [points, selectedCode, pan, zoom]);
+  }, [points, selectedCode, pan, zoom, showGrid, showReadingArea]);
 
   useEffect(() => {
     draw();
@@ -443,7 +500,8 @@ export function MapCanvas({
         }}
         className="mono"
       >
-        zoom {zoom.toFixed(2)}x ・ Alt+ドラッグ/1本指でパン ・ ホイール/ピンチでズーム
+        zoom {zoom.toFixed(2)}x{showGrid && zoom < GRID_MIN_ZOOM ? ` (グリッドは${GRID_MIN_ZOOM}倍以上で表示)` : ''} ・ Alt+ドラッグ/1本指でパン
+        ・ ホイール/ピンチでズーム
       </div>
     </div>
   );
