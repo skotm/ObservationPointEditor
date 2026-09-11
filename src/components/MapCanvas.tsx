@@ -12,7 +12,6 @@ import {
   MIN_ZOOM,
   clamp,
   findPointsNear,
-  getReadingPixel,
   imagePixelToScreen,
   roundToPrecision,
   screenToImagePixel,
@@ -157,18 +156,40 @@ export function MapCanvas({
     }
 
     for (const p of points) {
-      const reading = getReadingPixel(p);
-      if (!reading) continue;
+      if (!p.point) continue;
+      // 読み取り範囲ボックスは「基準ピクセル (center)」を中心に固定する。
+      // マーカーの丸は、そこから読み取りオフセット (offset) 分ずらした
+      // 実際の読み取り位置 (center + offset) に表示する。
       // 保存されているピクセル座標は「そのピクセルの左上」を指す値のため、
       // 実際のピクセルの中心 (見た目上の正しい位置) は +0.5 した位置になる。
-      const readingCenter = { x: reading.x + 0.5, y: reading.y + 0.5 };
-      const screenPos = imagePixelToScreen(readingCenter, pan.x, pan.y, zoom);
-      if (screenPos.x < -20 || screenPos.y < -20 || screenPos.x > w + 20 || screenPos.y > h + 20) continue;
+      const boxCenterImg = { x: p.point.center.x + 0.5, y: p.point.center.y + 0.5 };
+      const dotCenterImg = {
+        x: p.point.center.x + p.point.offset.x + 0.5,
+        y: p.point.center.y + p.point.offset.y + 0.5,
+      };
+      const boxScreenPos = imagePixelToScreen(boxCenterImg, pan.x, pan.y, zoom);
+      const dotScreenPos = imagePixelToScreen(dotCenterImg, pan.x, pan.y, zoom);
+      if (
+        boxScreenPos.x < -20 &&
+        dotScreenPos.x < -20 &&
+        boxScreenPos.y < -20 &&
+        dotScreenPos.y < -20
+      ) {
+        continue;
+      }
+      if (
+        boxScreenPos.x > w + 20 &&
+        dotScreenPos.x > w + 20 &&
+        boxScreenPos.y > h + 20 &&
+        dotScreenPos.y > h + 20
+      ) {
+        continue;
+      }
 
       const isSelected = p.code === selectedCode;
       const color = p.isSuspended ? TYPE_MARKER_COLOR.suspended : TYPE_MARKER_COLOR[p.type];
 
-      // 読み取り範囲 (3x3ピクセル) を種別カラーの点線枠で表示する
+      // 読み取り範囲 (3x3ピクセル、center基準) を種別カラーの点線枠で表示する
       if (showReadingArea) {
         const cellSize = zoom;
         ctx.save();
@@ -177,16 +198,39 @@ export function MapCanvas({
         ctx.globalAlpha = p.isSuspended ? 0.45 : 0.85;
         ctx.lineWidth = isSelected ? 2 : 1;
         ctx.strokeRect(
-          screenPos.x - 1.5 * cellSize,
-          screenPos.y - 1.5 * cellSize,
+          boxScreenPos.x - 1.5 * cellSize,
+          boxScreenPos.y - 1.5 * cellSize,
           cellSize * 3,
           cellSize * 3,
         );
         ctx.restore();
       }
 
+      // オフセットがある場合、基準ピクセル(小さな十字)と実読み取り位置(丸)を線で結ぶ
+      const hasOffset = p.point.offset.x !== 0 || p.point.offset.y !== 0;
+      if (hasOffset) {
+        ctx.save();
+        ctx.strokeStyle = color;
+        ctx.globalAlpha = 0.8;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(boxScreenPos.x, boxScreenPos.y);
+        ctx.lineTo(dotScreenPos.x, dotScreenPos.y);
+        ctx.stroke();
+
+        // 基準ピクセル位置に小さな十字マークを表示
+        const crossSize = 4;
+        ctx.beginPath();
+        ctx.moveTo(boxScreenPos.x - crossSize, boxScreenPos.y);
+        ctx.lineTo(boxScreenPos.x + crossSize, boxScreenPos.y);
+        ctx.moveTo(boxScreenPos.x, boxScreenPos.y - crossSize);
+        ctx.lineTo(boxScreenPos.x, boxScreenPos.y + crossSize);
+        ctx.stroke();
+        ctx.restore();
+      }
+
       ctx.beginPath();
-      ctx.arc(screenPos.x, screenPos.y, isSelected ? 6 : 4, 0, Math.PI * 2);
+      ctx.arc(dotScreenPos.x, dotScreenPos.y, isSelected ? 6 : 4, 0, Math.PI * 2);
       ctx.fillStyle = color;
       ctx.globalAlpha = p.isSuspended ? 0.5 : 0.95;
       ctx.fill();
@@ -196,13 +240,13 @@ export function MapCanvas({
         ctx.lineWidth = 2;
         ctx.stroke();
 
-        // 選択中の観測点は読み取り範囲を実線・シアンで強調する
+        // 選択中の観測点は読み取り範囲を実線・シアンで強調する (center基準)
         const cellSize = zoom;
         ctx.strokeStyle = 'rgba(64, 216, 208, 0.8)';
         ctx.lineWidth = 1.5;
         ctx.strokeRect(
-          screenPos.x - 1.5 * cellSize,
-          screenPos.y - 1.5 * cellSize,
+          boxScreenPos.x - 1.5 * cellSize,
+          boxScreenPos.y - 1.5 * cellSize,
           cellSize * 3,
           cellSize * 3,
         );
