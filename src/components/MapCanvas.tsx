@@ -101,7 +101,7 @@ export function MapCanvas({
     canvas.width = w;
     canvas.height = h;
 
-    ctx.fillStyle = '#0b0f14';
+    ctx.fillStyle = '#000000';
     ctx.fillRect(0, 0, w, h);
 
     if (imgRef.current) {
@@ -109,7 +109,7 @@ export function MapCanvas({
       ctx.imageSmoothingEnabled = false;
       ctx.drawImage(img, pan.x, pan.y, img.width * zoom, img.height * zoom);
     } else {
-      ctx.fillStyle = '#6d7c8c';
+      ctx.fillStyle = '#6b7480';
       ctx.font = '13px sans-serif';
       ctx.fillText('背景画像が読み込まれていません', 16, 24);
     }
@@ -130,13 +130,13 @@ export function MapCanvas({
       ctx.fill();
       ctx.globalAlpha = 1;
       if (isSelected) {
-        ctx.strokeStyle = '#3ddbd9';
+        ctx.strokeStyle = '#40d8d0';
         ctx.lineWidth = 2;
         ctx.stroke();
 
         // 3x3 読み取り範囲のハイライト
         const cellSize = zoom;
-        ctx.strokeStyle = 'rgba(61, 219, 217, 0.6)';
+        ctx.strokeStyle = 'rgba(64, 216, 208, 0.6)';
         ctx.lineWidth = 1;
         ctx.strokeRect(
           screenPos.x - 1.5 * cellSize,
@@ -187,6 +187,17 @@ export function MapCanvas({
 
       const candidates = findPointsNear(points, pixel, HIT_RADIUS_PX / zoom);
       if (candidates.length === 0) {
+        // 座標未設定の観測点が選択中なら、クリック位置をその初期座標として設定する
+        const selected = points.find((p) => p.code === selectedCode);
+        if (selected && !selected.point) {
+          const initial = {
+            x: roundToPrecision(pixel.x, decimalMode),
+            y: roundToPrecision(pixel.y, decimalMode),
+          };
+          onMovePoint(selected.code, initial);
+          draggingRef.current = { code: selected.code, part: 'center' };
+          return;
+        }
         onSelectPoint(null);
         return;
       }
@@ -197,7 +208,7 @@ export function MapCanvas({
         onMultiCandidates(candidates);
       }
     },
-    [getPixelFromEvent, onMultiCandidates, onSelectPoint, pan, points, zoom],
+    [decimalMode, getPixelFromEvent, onMovePoint, onMultiCandidates, onSelectPoint, pan, points, selectedCode, zoom],
   );
 
   const handleMouseMove = useCallback(
@@ -297,6 +308,17 @@ export function MapCanvas({
         const { zoom: curZoom, pan: curPan } = panZoomRef.current;
         const candidates = findPointsNear(points, pixel, TOUCH_HIT_RADIUS_PX / curZoom);
         if (candidates.length === 0) {
+          // 座標未設定の観測点が選択中なら、タップ位置をその初期座標として設定する
+          const selected = points.find((p) => p.code === selectedCode);
+          if (selected && !selected.point) {
+            const initial = {
+              x: roundToPrecision(pixel.x, decimalMode),
+              y: roundToPrecision(pixel.y, decimalMode),
+            };
+            onMovePoint(selected.code, initial);
+            draggingRef.current = { code: selected.code, part: 'center' };
+            return;
+          }
           // 観測点がない位置 → パン開始
           panningRef.current = { startX: touch.clientX, startY: touch.clientY, startPan: curPan };
           return;
@@ -309,7 +331,7 @@ export function MapCanvas({
         }
       }
     },
-    [getPixelFromPoint, onMultiCandidates, onSelectPoint, points],
+    [decimalMode, getPixelFromPoint, onMovePoint, onMultiCandidates, onSelectPoint, points, selectedCode],
   );
 
   const handleTouchMove = useCallback(
@@ -407,14 +429,17 @@ export function MapCanvas({
       <div
         style={{
           position: 'absolute',
-          bottom: 10,
-          left: 10,
-          background: 'rgba(18, 24, 31, 0.85)',
-          border: '1px solid var(--c-border)',
-          borderRadius: 4,
-          padding: '4px 8px',
+          bottom: 14,
+          left: 14,
+          background: 'rgba(28, 30, 34, 0.8)',
+          backdropFilter: 'blur(10px)',
+          WebkitBackdropFilter: 'blur(10px)',
+          border: '1px solid var(--c-separator-strong)',
+          borderRadius: 'var(--radius-pill)',
+          padding: '6px 14px',
           fontSize: 12,
-          color: 'var(--c-text-1)',
+          color: 'var(--c-label-secondary)',
+          boxShadow: 'var(--shadow-sm)',
         }}
         className="mono"
       >

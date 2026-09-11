@@ -23,7 +23,7 @@ export function PixelDetectionDialog({
       onClose={onClose}
       width={560}
       footer={
-        <button onClick={onClose} style={okButton}>
+        <button onClick={onClose} className="btn btn-primary">
           閉じる
         </button>
       }
@@ -43,7 +43,7 @@ export function PixelDetectionDialog({
                 <span className="mono">
                   ({s.x}, {s.y})
                 </span>{' '}
-                {s.nearestCode && <span style={{ color: 'var(--c-text-2)' }}>最寄り: {s.nearestCode}</span>}
+                {s.nearestCode && <span style={{ color: 'var(--c-label-tertiary)' }}>最寄り: {s.nearestCode}</span>}
               </button>
             ))}
           </div>
@@ -66,7 +66,7 @@ export function PixelDetectionDialog({
       )}
 
       {!unassigned && (!transparent || transparent.length === 0) && (
-        <div style={{ color: 'var(--c-text-2)', fontSize: 13 }}>問題は検出されませんでした。</div>
+        <div style={{ color: 'var(--c-label-tertiary)', fontSize: 13 }}>問題は検出されませんでした。</div>
       )}
     </Modal>
   );
@@ -75,20 +75,12 @@ export function PixelDetectionDialog({
 const rowButton: CSSProperties = {
   textAlign: 'left',
   background: 'var(--c-bg-2)',
-  border: '1px solid var(--c-border)',
-  borderRadius: 4,
-  padding: '6px 10px',
-  color: 'var(--c-text-0)',
+  border: '1px solid var(--c-separator)',
+  borderRadius: 'var(--radius-sm)',
+  padding: '8px 12px',
+  color: 'var(--c-label)',
   cursor: 'pointer',
   fontSize: 12,
+  transition: 'background 120ms ease, border-color 120ms ease',
 };
 
-const okButton: CSSProperties = {
-  padding: '7px 16px',
-  background: 'var(--c-accent)',
-  color: '#1a0e05',
-  border: 'none',
-  borderRadius: 4,
-  fontWeight: 600,
-  cursor: 'pointer',
-};

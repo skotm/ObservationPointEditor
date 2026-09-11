@@ -14,14 +14,14 @@ export function DataGridPanel({ points, selectedCode, onSelect }: DataGridPanelP
     <div
       style={{
         height: 220,
-        borderTop: '1px solid var(--c-border)',
+        borderTop: '1px solid var(--c-separator)',
         background: 'var(--c-bg-1)',
         overflowY: 'auto',
       }}
     >
       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
         <thead>
-          <tr style={{ position: 'sticky', top: 0, background: 'var(--c-bg-2)', zIndex: 1 }}>
+          <tr style={{ position: 'sticky', top: 0, background: 'var(--c-bg-1)', zIndex: 1 }}>
             <Th>種別</Th>
             <Th>コード</Th>
             <Th>名称</Th>
@@ -42,7 +42,14 @@ export function DataGridPanel({ points, selectedCode, onSelect }: DataGridPanelP
                 style={{
                   cursor: 'pointer',
                   background: isSelected ? 'var(--c-bg-3)' : 'transparent',
-                  borderBottom: '1px solid var(--c-border)',
+                  borderBottom: '1px solid var(--c-separator)',
+                  transition: 'background 120ms ease',
+                }}
+                onMouseEnter={(e) => {
+                  if (!isSelected) e.currentTarget.style.background = 'var(--c-bg-2)';
+                }}
+                onMouseLeave={(e) => {
+                  if (!isSelected) e.currentTarget.style.background = 'transparent';
                 }}
               >
                 <Td>
@@ -60,7 +67,7 @@ export function DataGridPanel({ points, selectedCode, onSelect }: DataGridPanelP
                   {p.isSuspended ? (
                     <span style={{ color: 'var(--c-suspended)' }}>停止中</span>
                   ) : (
-                    <span style={{ color: 'var(--c-success)' }}>運用中</span>
+                    <span style={{ color: 'var(--c-green)' }}>運用中</span>
                   )}
                 </Td>
               </tr>
@@ -68,7 +75,7 @@ export function DataGridPanel({ points, selectedCode, onSelect }: DataGridPanelP
           })}
           {points.length === 0 && (
             <tr>
-              <td colSpan={8} style={{ padding: 20, textAlign: 'center', color: 'var(--c-text-2)' }}>
+              <td colSpan={8} style={{ padding: 20, textAlign: 'center', color: 'var(--c-label-tertiary)' }}>
                 表示する観測点がありません
               </td>
             </tr>
@@ -84,10 +91,13 @@ function Th({ children }: { children: ReactNode }) {
     <th
       style={{
         textAlign: 'left',
-        padding: '6px 10px',
-        color: 'var(--c-text-1)',
-        fontWeight: 500,
-        borderBottom: '1px solid var(--c-border)',
+        padding: '9px 12px',
+        color: 'var(--c-label-tertiary)',
+        fontWeight: 600,
+        fontSize: 11,
+        letterSpacing: 0.02,
+        textTransform: 'uppercase',
+        borderBottom: '1px solid var(--c-separator)',
         whiteSpace: 'nowrap',
       }}
     >
@@ -98,7 +108,7 @@ function Th({ children }: { children: ReactNode }) {
 
 function Td({ children, className }: { children: ReactNode; className?: string }) {
   return (
-    <td style={{ padding: '6px 10px', whiteSpace: 'nowrap' }} className={className}>
+    <td style={{ padding: '8px 12px', whiteSpace: 'nowrap' }} className={className}>
       {children}
     </td>
   );

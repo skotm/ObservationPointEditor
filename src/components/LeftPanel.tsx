@@ -1,6 +1,7 @@
-import type { CSSProperties, ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import type { CommonObservationPoint, FilterState, TypeStats } from '@/types';
 import { TYPE_LABEL } from '@/utils/formatters';
+import { Toggle } from '@/components/Toggle';
 
 interface LeftPanelProps {
   filter: FilterState;
@@ -32,10 +33,10 @@ export function LeftPanel({
   return (
     <div
       style={{
-        width: 300,
-        minWidth: 300,
+        width: 320,
+        minWidth: 320,
         background: 'var(--c-bg-1)',
-        borderRight: '1px solid var(--c-border)',
+        borderRight: '1px solid var(--c-separator)',
         display: 'flex',
         flexDirection: 'column',
         overflowY: 'auto',
@@ -47,78 +48,83 @@ export function LeftPanel({
           placeholder="コード・名前・地域で検索"
           value={filter.searchText}
           onChange={(e) => onFilterChange({ ...filter, searchText: e.target.value })}
-          style={{ width: '100%', marginBottom: 10 }}
+          style={{ width: '100%', marginBottom: 14 }}
         />
-        <label style={checkboxRow}>
-          <input
-            type="checkbox"
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <FilterRow
+            color="var(--c-knet)"
+            label="K-NET"
+            count={stats.kNet}
             checked={filter.showKNet}
-            onChange={(e) => onFilterChange({ ...filter, showKNet: e.target.checked })}
+            onChange={(v) => onFilterChange({ ...filter, showKNet: v })}
           />
-          <span style={{ color: 'var(--c-knet)' }}>●</span> K-NET
-          <span style={countStyle}>{stats.kNet}</span>
-        </label>
-        <label style={checkboxRow}>
-          <input
-            type="checkbox"
+          <FilterRow
+            color="var(--c-kiknet)"
+            label="KiK-net"
+            count={stats.kikNet}
             checked={filter.showKiKNet}
-            onChange={(e) => onFilterChange({ ...filter, showKiKNet: e.target.checked })}
+            onChange={(v) => onFilterChange({ ...filter, showKiKNet: v })}
           />
-          <span style={{ color: 'var(--c-kiknet)' }}>●</span> KiK-net
-          <span style={countStyle}>{stats.kikNet}</span>
-        </label>
-        <label style={checkboxRow}>
-          <input
-            type="checkbox"
+          <FilterRow
+            color="var(--c-snet)"
+            label="S-net"
+            count={stats.sNet}
             checked={filter.showSNet}
-            onChange={(e) => onFilterChange({ ...filter, showSNet: e.target.checked })}
+            onChange={(v) => onFilterChange({ ...filter, showSNet: v })}
           />
-          <span style={{ color: 'var(--c-snet)' }}>●</span> S-net
-          <span style={countStyle}>{stats.sNet}</span>
-        </label>
-        <label style={checkboxRow}>
-          <input
-            type="checkbox"
+          <FilterRow
+            color="var(--c-suspended)"
+            label="運用停止も表示"
+            count={stats.suspended}
             checked={filter.showSuspended}
-            onChange={(e) => onFilterChange({ ...filter, showSuspended: e.target.checked })}
+            onChange={(v) => onFilterChange({ ...filter, showSuspended: v })}
           />
-          <span style={{ color: 'var(--c-suspended)' }}>●</span> 運用停止も表示
-          <span style={countStyle}>{stats.suspended}</span>
-        </label>
-        <div className="mono" style={{ marginTop: 8, fontSize: 12, color: 'var(--c-text-2)' }}>
-          {filteredCount} / {totalCount} 件表示中
+        </div>
+
+        <div
+          className="mono"
+          style={{
+            marginTop: 14,
+            fontSize: 12,
+            color: 'var(--c-label-tertiary)',
+            display: 'flex',
+            justifyContent: 'space-between',
+          }}
+        >
+          <span>表示中</span>
+          <span>
+            {filteredCount} / {totalCount} 件
+          </span>
         </div>
       </Section>
 
       <Section title="観測点の操作">
-        <button style={primaryButton} onClick={onAddPoint}>
-          + 新規観測点を追加
+        <button className="btn btn-primary" style={{ width: '100%', marginBottom: 8 }} onClick={onAddPoint}>
+          ＋ 新規観測点を追加
         </button>
         {selectedPoint && (
-          <button style={dangerButton} onClick={onDeleteSelected}>
+          <button className="btn btn-danger" style={{ width: '100%' }} onClick={onDeleteSelected}>
             選択中の観測点を削除
           </button>
         )}
       </Section>
 
       <Section title="座標設定">
-        <label style={checkboxRow}>
-          <input
-            type="checkbox"
-            checked={decimalMode}
-            onChange={(e) => onDecimalModeChange(e.target.checked)}
-          />
-          小数点モード (ピクセル座標を小数第一位まで指定)
-        </label>
-        <div style={{ fontSize: 11, color: 'var(--c-text-2)' }}>
-          {decimalMode
-            ? 'ドラッグ・矢印キー操作の座標が 0.1px 単位になります。'
-            : 'ドラッグ・矢印キー操作の座標が整数(1px単位)になります。'}
-        </div>
+        <Toggle
+          checked={decimalMode}
+          onChange={onDecimalModeChange}
+          label="小数点モード"
+          description={
+            decimalMode
+              ? '座標を0.1px単位で指定します'
+              : '座標を整数(1px単位)で指定します'
+          }
+        />
       </Section>
 
       {selectedPoint ? (
-        <Section title={`編集中: ${selectedPoint.code}`}>
+        <Section title={`編集中 — ${selectedPoint.code}`}>
           <Field label="種別">
             <select
               value={selectedPoint.type}
@@ -156,7 +162,7 @@ export function LeftPanel({
             />
           </Field>
           <Field label="緯度 / 経度">
-            <div style={{ display: 'flex', gap: 6 }}>
+            <div style={{ display: 'flex', gap: 8 }}>
               <input
                 type="number"
                 step="0.00001"
@@ -185,7 +191,7 @@ export function LeftPanel({
           </Field>
           <Field label="読み取りピクセル座標 (center)">
             {selectedPoint.point ? (
-              <div style={{ display: 'flex', gap: 6 }}>
+              <div style={{ display: 'flex', gap: 8 }}>
                 <input
                   type="number"
                   value={selectedPoint.point.center.x}
@@ -218,14 +224,23 @@ export function LeftPanel({
                 />
               </div>
             ) : (
-              <div style={{ color: 'var(--c-text-2)', fontSize: 12 }}>
+              <div
+                style={{
+                  color: 'var(--c-label-tertiary)',
+                  fontSize: 12,
+                  background: 'var(--c-bg-2)',
+                  border: '1px dashed var(--c-separator-strong)',
+                  borderRadius: 'var(--radius-sm)',
+                  padding: '10px 12px',
+                }}
+              >
                 地図上でクリックすると座標が設定されます
               </div>
             )}
           </Field>
           {selectedPoint.point && (
             <Field label="補正オフセット (offset)">
-              <div style={{ display: 'flex', gap: 6 }}>
+              <div style={{ display: 'flex', gap: 8 }}>
                 <input
                   type="number"
                   value={selectedPoint.point.offset.x}
@@ -259,17 +274,14 @@ export function LeftPanel({
               </div>
             </Field>
           )}
-          <label style={checkboxRow}>
-            <input
-              type="checkbox"
-              checked={selectedPoint.isSuspended}
-              onChange={(e) => onPatchSelected({ isSuspended: e.target.checked })}
-            />
-            運用停止中
-          </label>
+          <Toggle
+            checked={selectedPoint.isSuspended}
+            onChange={(v) => onPatchSelected({ isSuspended: v })}
+            label="運用停止中"
+          />
         </Section>
       ) : (
-        <div style={{ padding: 16, color: 'var(--c-text-2)', fontSize: 13 }}>
+        <div style={{ padding: '20px 20px', color: 'var(--c-label-tertiary)', fontSize: 13, lineHeight: 1.6 }}>
           地図上の観測点をクリックすると詳細を編集できます。
         </div>
       )}
@@ -277,10 +289,51 @@ export function LeftPanel({
   );
 }
 
+function FilterRow({
+  color,
+  label,
+  count,
+  checked,
+  onChange,
+}: {
+  color: string;
+  label: string;
+  count: number;
+  checked: boolean;
+  onChange: (v: boolean) => void;
+}) {
+  return (
+    <Toggle
+      checked={checked}
+      onChange={onChange}
+      label={
+        <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span
+            style={{
+              width: 8,
+              height: 8,
+              borderRadius: '50%',
+              background: color,
+              display: 'inline-block',
+              flex: 'none',
+            }}
+          />
+          {label}
+          <span className="mono" style={{ color: 'var(--c-label-tertiary)', fontSize: 11 }}>
+            {count}
+          </span>
+        </span>
+      }
+    />
+  );
+}
+
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <div style={{ borderBottom: '1px solid var(--c-border)', padding: '14px 16px' }}>
-      <div style={{ fontSize: 12, letterSpacing: 0.3, color: 'var(--c-text-1)', marginBottom: 10 }}>{title}</div>
+    <div style={{ borderBottom: '1px solid var(--c-separator)', padding: '18px 20px' }}>
+      <div className="section-title" style={{ marginBottom: 12 }}>
+        {title}
+      </div>
       {children}
     </div>
   );
@@ -288,47 +341,9 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
 
 function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <div style={{ marginBottom: 10 }}>
-      <div style={{ fontSize: 11, color: 'var(--c-text-2)', marginBottom: 4 }}>{label}</div>
+    <div style={{ marginBottom: 12 }}>
+      <div style={{ fontSize: 11, color: 'var(--c-label-tertiary)', marginBottom: 5 }}>{label}</div>
       {children}
     </div>
   );
 }
-
-const checkboxRow: CSSProperties = {
-  display: 'flex',
-  alignItems: 'center',
-  gap: 8,
-  fontSize: 13,
-  marginBottom: 8,
-  cursor: 'pointer',
-};
-
-const countStyle: CSSProperties = {
-  marginLeft: 'auto',
-  fontFamily: 'var(--font-mono)',
-  color: 'var(--c-text-2)',
-  fontSize: 12,
-};
-
-const primaryButton: CSSProperties = {
-  width: '100%',
-  padding: '8px 12px',
-  background: 'var(--c-accent)',
-  color: '#1a0e05',
-  border: 'none',
-  borderRadius: 4,
-  fontWeight: 600,
-  cursor: 'pointer',
-  marginBottom: 8,
-};
-
-const dangerButton: CSSProperties = {
-  width: '100%',
-  padding: '8px 12px',
-  background: 'transparent',
-  color: 'var(--c-danger)',
-  border: '1px solid var(--c-danger)',
-  borderRadius: 4,
-  cursor: 'pointer',
-};

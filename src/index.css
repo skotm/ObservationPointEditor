@@ -1,29 +1,79 @@
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&display=swap');
 
 :root {
-  /* Color: 深夜の観測所モニタールームをイメージした配色。
-     ベースは沈んだ藍炭色、警報色として震度モニタの赤〜橙、
-     操作系のアクセントはシアン。 */
-  --c-bg-0: #0b0f14;
-  --c-bg-1: #12181f;
-  --c-bg-2: #1a222b;
-  --c-bg-3: #232d38;
-  --c-border: #2c3846;
-  --c-text-0: #eef2f6;
-  --c-text-1: #a9b6c2;
-  --c-text-2: #6d7c8c;
-  --c-accent: #ff7a3d;
-  --c-accent-dim: #7a3d20;
-  --c-cyan: #3ddbd9;
-  --c-knet: #ff8c00;
-  --c-kiknet: #e02020;
-  --c-snet: #2f8fe0;
-  --c-suspended: #6d7c8c;
-  --c-danger: #e0405c;
-  --c-success: #35c07a;
+  /* ============================================================
+   * カラーシステム
+   * Apple Human Interface Guidelines の「階層化されたシステム背景色」
+   * (systemBackground / secondarySystemBackground / tertiarySystemBackground)
+   * の考え方を踏襲したダークパレット。層が上がるほど明るくなり、
+   * 奥行き(depth)を表現する。
+   * ============================================================ */
+  --c-bg-0: #000000;           /* 最背面 (systemBackground 相当) */
+  --c-bg-1: #121316;           /* secondarySystemBackground 相当: ツールバー・サイドパネル */
+  --c-bg-2: #1c1e22;           /* tertiarySystemBackground 相当: カード・入力欄 */
+  --c-bg-3: #26292e;           /* 選択状態・ホバー時の一段明るい層 */
+  --c-bg-elevated: #202226;    /* モーダル・ポップオーバーなど最前面レイヤー */
 
-  --font-ui: 'Zen Kaku Gothic New', 'Hiragino Sans', system-ui, sans-serif;
-  --font-mono: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', monospace;
+  --c-separator: rgba(255, 255, 255, 0.09);
+  --c-separator-strong: rgba(255, 255, 255, 0.16);
+
+  --c-label: #f5f6f7;              /* label (主要テキスト) */
+  --c-label-secondary: #9ba3ad;    /* secondaryLabel */
+  --c-label-tertiary: #6b7480;     /* tertiaryLabel */
+  --c-label-quaternary: #454a52;   /* quaternaryLabel */
+
+  /* システムカラー相当 (iOS/macOS の systemOrange, systemRed, systemBlue 等) */
+  --c-accent: #ff9f43;
+  --c-accent-pressed: #e8862a;
+  --c-accent-soft: rgba(255, 159, 67, 0.16);
+  --c-blue: #4da3ff;
+  --c-cyan: #40d8d0;
+  --c-red: #ff5470;
+  --c-red-soft: rgba(255, 84, 112, 0.14);
+  --c-green: #35d488;
+  --c-green-soft: rgba(53, 212, 136, 0.14);
+
+  --c-knet: #ffab40;
+  --c-kiknet: #ff5470;
+  --c-snet: #4da3ff;
+  --c-suspended: #7b8290;
+
+  /* ============================================================
+   * タイポグラフィ: OS標準フォント (San Francisco 相当) を優先し、
+   * フォールバックとして和文フォントを指定する。
+   * ============================================================ */
+  --font-ui:
+    -apple-system, BlinkMacSystemFont, 'SF Pro JP', 'Hiragino Sans', 'Zen Kaku Gothic New', system-ui,
+    sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', 'JetBrains Mono', 'SFMono-Regular', Menlo, monospace;
+
+  /* ============================================================
+   * 形状・間隔・モーション
+   * HIGの「連続した角丸 (continuous corner)」と、控えめで自然な
+   * モーションの考え方に合わせた共通トークン。
+   * ============================================================ */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-pill: 999px;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.55);
+
+  --ease-standard: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --duration-fast: 120ms;
+  --duration-normal: 200ms;
+
+  /* タッチターゲットの最小サイズ (HIG推奨: 44pt角) */
+  --hit-target-min: 44px;
 
   color-scheme: dark;
 }
@@ -41,41 +91,229 @@ body,
 
 body {
   background: var(--c-bg-0);
-  color: var(--c-text-0);
+  color: var(--c-label);
   font-family: var(--font-ui);
   font-size: 14px;
+  line-height: 1.45;
   -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
 button {
   font-family: inherit;
+  -webkit-tap-highlight-color: transparent;
 }
 
 button:focus-visible,
 input:focus-visible,
 select:focus-visible,
 [tabindex]:focus-visible {
-  outline: 2px solid var(--c-cyan);
-  outline-offset: 1px;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(77, 163, 255, 0.5);
+  border-radius: var(--radius-sm);
 }
 
 ::selection {
-  background: var(--c-accent-dim);
+  background: var(--c-accent-soft);
 }
 
 input,
 select {
   background: var(--c-bg-2);
-  border: 1px solid var(--c-border);
-  color: var(--c-text-0);
-  border-radius: 4px;
-  padding: 5px 8px;
+  border: 1px solid var(--c-separator-strong);
+  color: var(--c-label);
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
   font-size: 13px;
+  transition: border-color var(--duration-fast) var(--ease-standard), background var(--duration-fast) var(--ease-standard);
+}
+
+input:hover,
+select:hover {
+  border-color: rgba(255, 255, 255, 0.28);
+}
+
+input:focus,
+select:focus {
+  border-color: var(--c-blue);
+  background: var(--c-bg-3);
+}
+
+input[type='checkbox'] {
+  accent-color: var(--c-accent);
+  width: 17px;
+  height: 17px;
 }
 
 .mono {
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
+}
+
+/* ============================================================
+ * ボタン共通スタイル
+ * HIG: 明瞭な階層 (Prominent / Default / Plain)、
+ * 十分なタップ領域、押下時のフィードバックを持たせる。
+ * ============================================================ */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 34px;
+  padding: 7px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--c-label);
+  background: var(--c-bg-3);
+  border: 1px solid var(--c-separator-strong);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    background var(--duration-fast) var(--ease-standard),
+    border-color var(--duration-fast) var(--ease-standard),
+    transform var(--duration-fast) var(--ease-standard),
+    opacity var(--duration-fast) var(--ease-standard);
+}
+
+.btn:hover:not(:disabled) {
+  background: #32353b;
+  border-color: rgba(255, 255, 255, 0.24);
+}
+
+.btn:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background: var(--c-accent);
+  border-color: var(--c-accent);
+  color: #241300;
+  font-weight: 600;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: #ffb066;
+  border-color: #ffb066;
+}
+
+.btn-primary:active:not(:disabled) {
+  background: var(--c-accent-pressed);
+}
+
+.btn-danger {
+  background: transparent;
+  border-color: var(--c-red);
+  color: var(--c-red);
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: var(--c-red-soft);
+}
+
+.btn-plain {
+  background: transparent;
+  border-color: transparent;
+  color: var(--c-label-secondary);
+}
+
+.btn-plain:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--c-label);
+}
+
+/* ============================================================
+ * iOS 風トグルスイッチ
+ * ============================================================ */
+.toggle {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  width: 42px;
+  height: 26px;
+  flex: none;
+  border-radius: var(--radius-pill);
+  background: var(--c-bg-3);
+  border: 1px solid var(--c-separator-strong);
+  cursor: pointer;
+  transition: background var(--duration-normal) var(--ease-standard), border-color var(--duration-normal) var(--ease-standard);
+}
+
+.toggle[data-checked='true'] {
+  background: var(--c-accent);
+  border-color: var(--c-accent);
+}
+
+.toggle-knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: var(--shadow-sm);
+  transition: transform var(--duration-normal) var(--ease-standard);
+}
+
+.toggle[data-checked='true'] .toggle-knob {
+  transform: translateX(16px);
+}
+
+.toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: var(--hit-target-min);
+  cursor: pointer;
+}
+
+/* ============================================================
+ * カード / セクション
+ * ============================================================ */
+.card {
+  background: var(--c-bg-2);
+  border: 1px solid var(--c-separator);
+  border-radius: var(--radius-md);
+}
+
+.section-title {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--c-label-tertiary);
+  text-transform: uppercase;
+}
+
+/* ============================================================
+ * スクロールバー (WebKit)
+ * ============================================================ */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.14);
+  border-radius: var(--radius-pill);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.24);
+  background-clip: padding-box;
 }
 
 @media (prefers-reduced-motion: reduce) {

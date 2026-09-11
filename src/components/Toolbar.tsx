@@ -1,5 +1,5 @@
-import type { ReactNode } from 'react';
 import { useRef } from 'react';
+import type { ReactNode } from 'react';
 
 interface ToolbarProps {
   onNewFile: () => void;
@@ -50,46 +50,89 @@ export function Toolbar({
   return (
     <div
       style={{
-        height: 48,
         display: 'flex',
         alignItems: 'center',
-        gap: 6,
-        padding: '0 12px',
+        gap: 10,
+        rowGap: 10,
+        padding: '10px 16px',
         background: 'var(--c-bg-1)',
-        borderBottom: '1px solid var(--c-border)',
+        borderBottom: '1px solid var(--c-separator)',
+        boxShadow: 'var(--shadow-sm)',
         flexWrap: 'wrap',
+        position: 'relative',
+        zIndex: 5,
       }}
     >
-      <div style={{ fontWeight: 700, marginRight: 12, letterSpacing: 0.5 }}>
-        <span style={{ color: 'var(--c-accent)' }}>●</span> ObservationPointEditor
-        {isDirty && <span style={{ color: 'var(--c-text-2)', fontWeight: 400, marginLeft: 6, fontSize: 12 }}>未保存の変更あり</span>}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8,
+          marginRight: 4,
+          fontWeight: 700,
+          fontSize: 14,
+          letterSpacing: 0.1,
+        }}
+      >
+        <span
+          style={{
+            width: 9,
+            height: 9,
+            borderRadius: '50%',
+            background: 'var(--c-accent)',
+            boxShadow: '0 0 8px var(--c-accent)',
+            display: 'inline-block',
+          }}
+        />
+        ObservationPointEditor
+        {isDirty && (
+          <span
+            className="mono"
+            style={{
+              color: 'var(--c-label-tertiary)',
+              fontWeight: 500,
+              fontSize: 11,
+              background: 'var(--c-bg-3)',
+              borderRadius: 'var(--radius-pill)',
+              padding: '2px 8px',
+            }}
+          >
+            未保存の変更
+          </span>
+        )}
       </div>
 
-      <Btn onClick={onNewFile}>新規</Btn>
-      <Btn onClick={() => jsonInput.current?.click()}>JSON を開く</Btn>
-      <Btn onClick={() => kmopInput.current?.click()}>KMOP を開く</Btn>
-      <Btn onClick={onSaveJson}>JSON 保存</Btn>
-      <Btn onClick={onSaveKmop}>KMOP 保存</Btn>
+      <ButtonGroup>
+        <Btn onClick={onNewFile}>新規</Btn>
+        <Btn onClick={() => jsonInput.current?.click()}>JSON を開く</Btn>
+        <Btn onClick={() => kmopInput.current?.click()}>KMOP を開く</Btn>
+        <Btn onClick={onSaveJson} variant="primary">JSON 保存</Btn>
+        <Btn onClick={onSaveKmop}>KMOP 保存</Btn>
+      </ButtonGroup>
 
-      <Divider />
+      <ButtonGroup>
+        <Btn onClick={() => csvInput.current?.click()}>NIED CSV 取り込み</Btn>
+        <Btn onClick={onConsolidate}>重複統合</Btn>
+      </ButtonGroup>
 
-      <Btn onClick={() => csvInput.current?.click()}>NIED CSV 取り込み</Btn>
-      <Btn onClick={onConsolidate}>重複統合</Btn>
+      <ButtonGroup>
+        <Btn onClick={onDetectUnassigned} disabled={!hasBackground}>未割当ピクセル検出</Btn>
+        <Btn onClick={onDetectTransparent} disabled={!hasBackground}>透明ピクセル検出</Btn>
+      </ButtonGroup>
 
-      <Divider />
-
-      <Btn onClick={onDetectUnassigned} disabled={!hasBackground}>未割当ピクセル検出</Btn>
-      <Btn onClick={onDetectTransparent} disabled={!hasBackground}>透明ピクセル検出</Btn>
-
-      <Divider />
-
-      <Btn onClick={() => imgInput.current?.click()}>背景画像を開く</Btn>
-      <Btn onClick={onLoadBackgroundFromKmoni}>kmoniから取得</Btn>
-      <Btn onClick={onLoadBackgroundFromUmishiru}>海しるから取得</Btn>
+      <ButtonGroup>
+        <Btn onClick={() => imgInput.current?.click()}>背景画像を開く</Btn>
+        <Btn onClick={onLoadBackgroundFromKmoni}>kmoniから取得</Btn>
+        <Btn onClick={onLoadBackgroundFromUmishiru}>海しるから取得</Btn>
+      </ButtonGroup>
 
       <div style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
-        <Btn onClick={onUndo} disabled={!canUndo}>↺ 元に戻す</Btn>
-        <Btn onClick={onRedo} disabled={!canRedo}>↻ やり直す</Btn>
+        <Btn onClick={onUndo} disabled={!canUndo} aria-label="元に戻す">
+          ↺ 元に戻す
+        </Btn>
+        <Btn onClick={onRedo} disabled={!canRedo} aria-label="やり直す">
+          ↻ やり直す
+        </Btn>
       </div>
 
       <input
@@ -148,36 +191,46 @@ export function Toolbar({
   );
 }
 
+/** 関連するボタンを1つの丸みを帯びたグループとして視覚的にまとめる (HIGのセグメント化に近い表現) */
+function ButtonGroup({ children }: { children: ReactNode }) {
+  return (
+    <div
+      style={{
+        display: 'flex',
+        gap: 2,
+        padding: 3,
+        background: 'var(--c-bg-2)',
+        border: '1px solid var(--c-separator)',
+        borderRadius: 'var(--radius-md)',
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
 function Btn({
   children,
   onClick,
   disabled,
+  variant,
+  'aria-label': ariaLabel,
 }: {
   children: ReactNode;
   onClick: () => void;
   disabled?: boolean;
+  variant?: 'primary';
+  'aria-label'?: string;
 }) {
   return (
     <button
       onClick={onClick}
       disabled={disabled}
-      style={{
-        padding: '6px 10px',
-        background: 'var(--c-bg-2)',
-        border: '1px solid var(--c-border)',
-        borderRadius: 4,
-        color: disabled ? 'var(--c-text-2)' : 'var(--c-text-0)',
-        fontSize: 12,
-        cursor: disabled ? 'not-allowed' : 'pointer',
-        opacity: disabled ? 0.5 : 1,
-        whiteSpace: 'nowrap',
-      }}
+      aria-label={ariaLabel}
+      className={variant === 'primary' ? 'btn btn-primary' : 'btn'}
+      style={{ borderRadius: 'var(--radius-sm)' }}
     >
       {children}
     </button>
   );
-}
-
-function Divider() {
-  return <div style={{ width: 1, height: 24, background: 'var(--c-border)', margin: '0 4px' }} />;
 }

@@ -19,15 +19,22 @@ export function SelectPointDialog({ candidates, onSelect, onClose }: SelectPoint
             style={{
               textAlign: 'left',
               background: 'var(--c-bg-2)',
-              border: '1px solid var(--c-border)',
-              borderRadius: 4,
-              padding: '8px 10px',
-              color: 'var(--c-text-0)',
+              border: '1px solid var(--c-separator)',
+              borderRadius: 'var(--radius-sm)',
+              padding: '10px 12px',
+              color: 'var(--c-label)',
               cursor: 'pointer',
+              transition: 'background 120ms ease, border-color 120ms ease',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'var(--c-bg-3)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'var(--c-bg-2)';
             }}
           >
             <span className="mono">{c.code}</span> ・ {c.name}{' '}
-            <span style={{ color: 'var(--c-text-2)', fontSize: 12 }}>({TYPE_LABEL[c.type]})</span>
+            <span style={{ color: 'var(--c-label-tertiary)', fontSize: 12 }}>({TYPE_LABEL[c.type]})</span>
           </button>
         ))}
       </div>

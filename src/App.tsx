@@ -21,6 +21,7 @@ import { ErrorDialog } from '@/components/Dialogs/ErrorDialog';
 import { consolidateDuplicates } from '@/services/duplicateConsolidation';
 import { mergeImportedPoints, parseNiedCsv } from '@/services/importService';
 import { findTransparentPixelPoints, findUnassignedPixels } from '@/services/pixelDetection';
+import { roundToPrecision } from '@/utils/geometry';
 import {
   fetchKmoniImage,
   fetchKmoniLatestTimestamp,
@@ -190,12 +191,20 @@ export default function App() {
   const handleMultiCandidates = useCallback((pts: CommonObservationPoint[]) => setCandidates(pts), []);
 
   const handleMovePoint = useCallback(
-    (code: string, center: { x: number; y: number }) => {
+    (code: string, cursorPixel: { x: number; y: number }) => {
       const current = store.points.find((p) => p.code === code);
       const offset = current?.point?.offset ?? { x: 0, y: 0 };
+      // 表示位置 (center + offset) がカーソル位置と一致するように
+      // center を逆算する。offset をそのままにして center = cursor - offset
+      // とすることで、offset を持つ観測点でもドラッグ中にカーソルとの
+      // ズレが発生しないようにする。
+      const center = {
+        x: roundToPrecision(cursorPixel.x - offset.x, decimalMode),
+        y: roundToPrecision(cursorPixel.y - offset.y, decimalMode),
+      };
       store.applyPointChange(code, { center, offset });
     },
-    [store],
+    [store, decimalMode],
   );
 
   // --- キーボードショートカット ---

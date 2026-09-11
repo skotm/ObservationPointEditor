@@ -14,11 +14,14 @@ export function Modal({ title, onClose, children, footer, width = 480 }: ModalPr
       style={{
         position: 'fixed',
         inset: 0,
-        background: 'rgba(11, 15, 20, 0.7)',
+        background: 'rgba(0, 0, 0, 0.55)',
+        backdropFilter: 'blur(6px)',
+        WebkitBackdropFilter: 'blur(6px)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         zIndex: 100,
+        padding: 16,
       }}
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) onClose();
@@ -29,12 +32,13 @@ export function Modal({ title, onClose, children, footer, width = 480 }: ModalPr
           width,
           maxWidth: '92vw',
           maxHeight: '85vh',
-          background: 'var(--c-bg-1)',
-          border: '1px solid var(--c-border)',
-          borderRadius: 8,
-          boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
+          background: 'var(--c-bg-elevated)',
+          border: '1px solid var(--c-separator-strong)',
+          borderRadius: 'var(--radius-lg)',
+          boxShadow: 'var(--shadow-lg)',
           display: 'flex',
           flexDirection: 'column',
+          overflow: 'hidden',
         }}
       >
         <div
@@ -42,25 +46,35 @@ export function Modal({ title, onClose, children, footer, width = 480 }: ModalPr
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            padding: '14px 18px',
-            borderBottom: '1px solid var(--c-border)',
+            padding: '16px 20px',
+            borderBottom: '1px solid var(--c-separator)',
           }}
         >
-          <div style={{ fontSize: 14, fontWeight: 600 }}>{title}</div>
+          <div style={{ fontSize: 15, fontWeight: 600 }}>{title}</div>
           <button
             onClick={onClose}
-            style={{ background: 'none', border: 'none', color: 'var(--c-text-2)', fontSize: 18, cursor: 'pointer' }}
+            className="btn-plain"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: 30,
+              height: 30,
+              borderRadius: '50%',
+              fontSize: 16,
+              padding: 0,
+            }}
             aria-label="閉じる"
           >
             ×
           </button>
         </div>
-        <div style={{ padding: 18, overflowY: 'auto' }}>{children}</div>
+        <div style={{ padding: 20, overflowY: 'auto' }}>{children}</div>
         {footer && (
           <div
             style={{
-              padding: '12px 18px',
-              borderTop: '1px solid var(--c-border)',
+              padding: '14px 20px',
+              borderTop: '1px solid var(--c-separator)',
               display: 'flex',
               justifyContent: 'flex-end',
               gap: 8,
