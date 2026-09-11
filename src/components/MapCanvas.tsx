@@ -123,9 +123,8 @@ export function MapCanvas({
     }
 
     // ピクセルグリッド (十分ズームしている場合のみ表示)
-    // 観測点のピクセル座標は「セルの中心」を表すため、セルの境界線は
-    // 整数位置ではなく +0.5 した半整数位置に引く必要がある。
-    // (例: 座標5のセルは [4.5, 5.5] の範囲を占める)
+    // グリッド線は「実際の画像データのピクセル境界」を示すため整数座標に引く。
+    // (背景画像は ctx.drawImage で描画されており、ピクセル境界は必ず整数座標に来るため)
     if (showGrid && zoom >= GRID_MIN_ZOOM) {
       const minX = Math.floor(-pan.x / zoom) - 1;
       const maxX = Math.ceil((w - pan.x) / zoom) + 1;
@@ -135,7 +134,7 @@ export function MapCanvas({
       ctx.save();
       ctx.lineWidth = 1;
       for (let x = minX; x <= maxX; x++) {
-        const screenX = Math.round((x + 0.5) * zoom + pan.x) + 0.5;
+        const screenX = Math.round(x * zoom + pan.x) + 0.5;
         if (screenX < -1 || screenX > w + 1) continue;
         const isMajor = x % GRID_MAJOR_INTERVAL === 0;
         ctx.strokeStyle = isMajor ? 'rgba(255, 255, 255, 0.28)' : 'rgba(255, 255, 255, 0.09)';
@@ -145,7 +144,7 @@ export function MapCanvas({
         ctx.stroke();
       }
       for (let y = minY; y <= maxY; y++) {
-        const screenY = Math.round((y + 0.5) * zoom + pan.y) + 0.5;
+        const screenY = Math.round(y * zoom + pan.y) + 0.5;
         if (screenY < -1 || screenY > h + 1) continue;
         const isMajor = y % GRID_MAJOR_INTERVAL === 0;
         ctx.strokeStyle = isMajor ? 'rgba(255, 255, 255, 0.28)' : 'rgba(255, 255, 255, 0.09)';
@@ -160,7 +159,10 @@ export function MapCanvas({
     for (const p of points) {
       const reading = getReadingPixel(p);
       if (!reading) continue;
-      const screenPos = imagePixelToScreen(reading, pan.x, pan.y, zoom);
+      // 保存されているピクセル座標は「そのピクセルの左上」を指す値のため、
+      // 実際のピクセルの中心 (見た目上の正しい位置) は +0.5 した位置になる。
+      const readingCenter = { x: reading.x + 0.5, y: reading.y + 0.5 };
+      const screenPos = imagePixelToScreen(readingCenter, pan.x, pan.y, zoom);
       if (screenPos.x < -20 || screenPos.y < -20 || screenPos.x > w + 20 || screenPos.y > h + 20) continue;
 
       const isSelected = p.code === selectedCode;
@@ -223,7 +225,13 @@ export function MapCanvas({
     if (!canvas) return null;
     const rect = canvas.getBoundingClientRect();
     const { pan: curPan, zoom: curZoom } = panZoomRef.current;
-    return screenToImagePixel(clientX, clientY, rect, curPan.x, curPan.y, curZoom);
+    const raw = screenToImagePixel(clientX, clientY, rect, curPan.x, curPan.y, curZoom);
+    // 背景画像上の連続座標raw は「ピクセルの中心が x.5 の位置」になる規約。
+    // drawImageの仕様上、ピクセルインデックスiは画像空間で i 以上 i+1 未満の範囲を占め、中心は i+0.5 となる。
+    // 保存するピクセル座標(center/offset)は「ピクセルインデックス」そのものを表すため、
+    // ここで -0.5 して両者の規約を一致させる。これにより、見た目のピクセル中心をクリックした
+    // 位置が、そのままそのピクセルのインデックス値として保存/比較されるようになる。
+    return { x: raw.x - 0.5, y: raw.y - 0.5 };
   }, []);
 
   const getPixelFromEvent = useCallback(
