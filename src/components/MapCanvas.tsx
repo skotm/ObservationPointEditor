@@ -123,16 +123,19 @@ export function MapCanvas({
     }
 
     // ピクセルグリッド (十分ズームしている場合のみ表示)
+    // 観測点のピクセル座標は「セルの中心」を表すため、セルの境界線は
+    // 整数位置ではなく +0.5 した半整数位置に引く必要がある。
+    // (例: 座標5のセルは [4.5, 5.5] の範囲を占める)
     if (showGrid && zoom >= GRID_MIN_ZOOM) {
-      const minX = Math.floor(-pan.x / zoom);
-      const maxX = Math.ceil((w - pan.x) / zoom);
-      const minY = Math.floor(-pan.y / zoom);
-      const maxY = Math.ceil((h - pan.y) / zoom);
+      const minX = Math.floor(-pan.x / zoom) - 1;
+      const maxX = Math.ceil((w - pan.x) / zoom) + 1;
+      const minY = Math.floor(-pan.y / zoom) - 1;
+      const maxY = Math.ceil((h - pan.y) / zoom) + 1;
 
       ctx.save();
       ctx.lineWidth = 1;
       for (let x = minX; x <= maxX; x++) {
-        const screenX = Math.round(x * zoom + pan.x) + 0.5;
+        const screenX = Math.round((x + 0.5) * zoom + pan.x) + 0.5;
         if (screenX < -1 || screenX > w + 1) continue;
         const isMajor = x % GRID_MAJOR_INTERVAL === 0;
         ctx.strokeStyle = isMajor ? 'rgba(255, 255, 255, 0.28)' : 'rgba(255, 255, 255, 0.09)';
@@ -142,7 +145,7 @@ export function MapCanvas({
         ctx.stroke();
       }
       for (let y = minY; y <= maxY; y++) {
-        const screenY = Math.round(y * zoom + pan.y) + 0.5;
+        const screenY = Math.round((y + 0.5) * zoom + pan.y) + 0.5;
         if (screenY < -1 || screenY > h + 1) continue;
         const isMajor = y % GRID_MAJOR_INTERVAL === 0;
         ctx.strokeStyle = isMajor ? 'rgba(255, 255, 255, 0.28)' : 'rgba(255, 255, 255, 0.09)';
