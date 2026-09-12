@@ -68,7 +68,7 @@ export function clamp(value: number, min: number, max: number): number {
 }
 
 export const MIN_ZOOM = 1.0;
-export const MAX_ZOOM = 25.0;
+export const MAX_ZOOM = 40.0;
 
 /**
  * 座標を指定精度に丸める。
