@@ -48,53 +48,29 @@ export function Toolbar({
   const imgInput = useRef<HTMLInputElement>(null);
 
   return (
-    <div
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 10,
-        rowGap: 10,
-        padding: '10px 16px',
-        background: 'var(--c-bg-1)',
-        borderBottom: '1px solid var(--c-separator)',
-        boxShadow: 'var(--shadow-sm)',
-        flexWrap: 'wrap',
-        position: 'relative',
-        zIndex: 5,
-      }}
-    >
+    <div>
+      {/* タイトルバー相当: アプリ名と保存状態 */}
       <div
         style={{
           display: 'flex',
           alignItems: 'center',
           gap: 8,
-          marginRight: 4,
-          fontWeight: 700,
-          fontSize: 14,
-          letterSpacing: 0.1,
+          padding: '4px 10px',
+          background: 'var(--c-accent)',
+          color: '#fff',
+          fontSize: 12.5,
+          fontWeight: 600,
         }}
       >
-        <span
-          style={{
-            width: 9,
-            height: 9,
-            borderRadius: '50%',
-            background: 'var(--c-accent)',
-            boxShadow: '0 0 8px var(--c-accent)',
-            display: 'inline-block',
-          }}
-        />
         ObservationPointEditor
         {isDirty && (
           <span
-            className="mono"
             style={{
-              color: 'var(--c-label-tertiary)',
-              fontWeight: 500,
+              fontWeight: 400,
               fontSize: 11,
-              background: 'var(--c-bg-3)',
-              borderRadius: 'var(--radius-pill)',
-              padding: '2px 8px',
+              background: 'rgba(255,255,255,0.22)',
+              borderRadius: 'var(--radius-sm)',
+              padding: '1px 8px',
             }}
           >
             未保存の変更
@@ -102,37 +78,51 @@ export function Toolbar({
         )}
       </div>
 
-      <ButtonGroup>
-        <Btn onClick={onNewFile}>新規</Btn>
-        <Btn onClick={() => jsonInput.current?.click()}>JSON を開く</Btn>
-        <Btn onClick={() => kmopInput.current?.click()}>KMOP を開く</Btn>
-        <Btn onClick={onSaveJson} variant="primary">JSON 保存</Btn>
-        <Btn onClick={onSaveKmop}>KMOP 保存</Btn>
-      </ButtonGroup>
+      {/* リボン風ツールバー */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'stretch',
+          gap: 0,
+          padding: '6px 8px',
+          background: 'var(--c-bg-1)',
+          borderBottom: '1px solid var(--c-separator-strong)',
+          flexWrap: 'wrap',
+          rowGap: 6,
+        }}
+      >
+        <RibbonGroup label="ファイル">
+          <Btn onClick={onNewFile}>新規</Btn>
+          <Btn onClick={() => jsonInput.current?.click()}>JSON を開く</Btn>
+          <Btn onClick={() => kmopInput.current?.click()}>KMOP を開く</Btn>
+          <Btn onClick={onSaveJson} variant="primary">JSON 保存</Btn>
+          <Btn onClick={onSaveKmop}>KMOP 保存</Btn>
+        </RibbonGroup>
 
-      <ButtonGroup>
-        <Btn onClick={() => csvInput.current?.click()}>NIED CSV 取り込み</Btn>
-        <Btn onClick={onConsolidate}>重複統合</Btn>
-      </ButtonGroup>
+        <RibbonGroup label="データ">
+          <Btn onClick={() => csvInput.current?.click()}>NIED CSV 取り込み</Btn>
+          <Btn onClick={onConsolidate}>重複統合</Btn>
+        </RibbonGroup>
 
-      <ButtonGroup>
-        <Btn onClick={onDetectUnassigned} disabled={!hasBackground}>未割当ピクセル検出</Btn>
-        <Btn onClick={onDetectTransparent} disabled={!hasBackground}>透明ピクセル検出</Btn>
-      </ButtonGroup>
+        <RibbonGroup label="検証">
+          <Btn onClick={onDetectUnassigned} disabled={!hasBackground}>未割当ピクセル検出</Btn>
+          <Btn onClick={onDetectTransparent} disabled={!hasBackground}>透明ピクセル検出</Btn>
+        </RibbonGroup>
 
-      <ButtonGroup>
-        <Btn onClick={() => imgInput.current?.click()}>背景画像を開く</Btn>
-        <Btn onClick={onLoadBackgroundFromKmoni}>kmoniから取得</Btn>
-        <Btn onClick={onLoadBackgroundFromUmishiru}>海しるから取得</Btn>
-      </ButtonGroup>
+        <RibbonGroup label="背景画像">
+          <Btn onClick={() => imgInput.current?.click()}>画像を開く</Btn>
+          <Btn onClick={onLoadBackgroundFromKmoni}>kmoniから取得</Btn>
+          <Btn onClick={onLoadBackgroundFromUmishiru}>海しるから取得</Btn>
+        </RibbonGroup>
 
-      <div style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
-        <Btn onClick={onUndo} disabled={!canUndo} aria-label="元に戻す">
-          ↺ 元に戻す
-        </Btn>
-        <Btn onClick={onRedo} disabled={!canRedo} aria-label="やり直す">
-          ↻ やり直す
-        </Btn>
+        <RibbonGroup label="編集" style={{ marginLeft: 'auto' }}>
+          <Btn onClick={onUndo} disabled={!canUndo} aria-label="元に戻す">
+            ↺ 元に戻す
+          </Btn>
+          <Btn onClick={onRedo} disabled={!canRedo} aria-label="やり直す">
+            ↻ やり直す
+          </Btn>
+        </RibbonGroup>
       </div>
 
       <input
@@ -191,20 +181,38 @@ export function Toolbar({
   );
 }
 
-/** 関連するボタンを1つの丸みを帯びたグループとして視覚的にまとめる (HIGのセグメント化に近い表現) */
-function ButtonGroup({ children }: { children: ReactNode }) {
+/** Excelリボンのような、下部にラベルの付いたボタングループ */
+function RibbonGroup({
+  label,
+  children,
+  style,
+}: {
+  label: string;
+  children: ReactNode;
+  style?: React.CSSProperties;
+}) {
   return (
     <div
       style={{
         display: 'flex',
-        gap: 2,
-        padding: 3,
-        background: 'var(--c-bg-2)',
-        border: '1px solid var(--c-separator)',
-        borderRadius: 'var(--radius-md)',
+        flexDirection: 'column',
+        alignItems: 'stretch',
+        padding: '0 10px',
+        borderRight: '1px solid var(--c-separator-strong)',
+        ...style,
       }}
     >
-      {children}
+      <div style={{ display: 'flex', gap: 4, marginBottom: 3 }}>{children}</div>
+      <div
+        style={{
+          fontSize: 10,
+          color: 'var(--c-label-tertiary)',
+          textAlign: 'center',
+          marginTop: 'auto',
+        }}
+      >
+        {label}
+      </div>
     </div>
   );
 }
@@ -228,7 +236,6 @@ function Btn({
       disabled={disabled}
       aria-label={ariaLabel}
       className={variant === 'primary' ? 'btn btn-primary' : 'btn'}
-      style={{ borderRadius: 'var(--radius-sm)' }}
     >
       {children}
     </button>

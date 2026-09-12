@@ -14,14 +14,14 @@ export function DataGridPanel({ points, selectedCode, onSelect }: DataGridPanelP
     <div
       style={{
         height: 220,
-        borderTop: '1px solid var(--c-separator)',
-        background: 'var(--c-bg-1)',
+        borderTop: '1px solid var(--c-separator-strong)',
+        background: 'var(--c-bg-2)',
         overflowY: 'auto',
       }}
     >
       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
         <thead>
-          <tr style={{ position: 'sticky', top: 0, background: 'var(--c-bg-1)', zIndex: 1 }}>
+          <tr style={{ position: 'sticky', top: 0, zIndex: 1 }}>
             <Th>種別</Th>
             <Th>コード</Th>
             <Th>名称</Th>
@@ -40,16 +40,16 @@ export function DataGridPanel({ points, selectedCode, onSelect }: DataGridPanelP
                 key={p.code}
                 onClick={() => onSelect(p.code)}
                 style={{
-                  cursor: 'pointer',
-                  background: isSelected ? 'var(--c-bg-3)' : 'transparent',
-                  borderBottom: '1px solid var(--c-separator)',
-                  transition: 'background 120ms ease',
+                  cursor: 'cell',
+                  background: isSelected ? 'var(--c-bg-3)' : 'var(--c-bg-2)',
+                  outline: isSelected ? '1.5px solid var(--c-blue)' : 'none',
+                  outlineOffset: '-1.5px',
                 }}
                 onMouseEnter={(e) => {
-                  if (!isSelected) e.currentTarget.style.background = 'var(--c-bg-2)';
+                  if (!isSelected) e.currentTarget.style.background = '#f5f9fd';
                 }}
                 onMouseLeave={(e) => {
-                  if (!isSelected) e.currentTarget.style.background = 'transparent';
+                  if (!isSelected) e.currentTarget.style.background = 'var(--c-bg-2)';
                 }}
               >
                 <Td>
@@ -91,13 +91,12 @@ function Th({ children }: { children: ReactNode }) {
     <th
       style={{
         textAlign: 'left',
-        padding: '9px 12px',
-        color: 'var(--c-label-tertiary)',
-        fontWeight: 600,
-        fontSize: 11,
-        letterSpacing: 0.02,
-        textTransform: 'uppercase',
-        borderBottom: '1px solid var(--c-separator)',
+        padding: '6px 10px',
+        color: 'var(--c-label)',
+        fontWeight: 700,
+        fontSize: 11.5,
+        background: 'var(--c-bg-1)',
+        border: '1px solid var(--c-separator-strong)',
         whiteSpace: 'nowrap',
       }}
     >
@@ -108,7 +107,10 @@ function Th({ children }: { children: ReactNode }) {
 
 function Td({ children, className }: { children: ReactNode; className?: string }) {
   return (
-    <td style={{ padding: '8px 12px', whiteSpace: 'nowrap' }} className={className}>
+    <td
+      style={{ padding: '5px 10px', whiteSpace: 'nowrap', border: '1px solid var(--c-separator)' }}
+      className={className}
+    >
       {children}
     </td>
   );

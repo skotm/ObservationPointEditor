@@ -12,7 +12,6 @@ import {
   MIN_ZOOM,
   clamp,
   findPointsNear,
-  getReadingPixel,
   imagePixelToScreen,
   roundToPrecision,
   screenToImagePixel,
@@ -109,7 +108,7 @@ export function MapCanvas({
     canvas.width = w;
     canvas.height = h;
 
-    ctx.fillStyle = '#000000';
+    ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, w, h);
 
     if (imgRef.current) {
@@ -117,15 +116,14 @@ export function MapCanvas({
       ctx.imageSmoothingEnabled = false;
       ctx.drawImage(img, pan.x, pan.y, img.width * zoom, img.height * zoom);
     } else {
-      ctx.fillStyle = '#6b7480';
+      ctx.fillStyle = '#737170';
       ctx.font = '13px sans-serif';
       ctx.fillText('背景画像が読み込まれていません', 16, 24);
     }
 
     // ピクセルグリッド (十分ズームしている場合のみ表示)
-    // 観測点のピクセル座標は「セルの中心」を表すため、セルの境界線は
-    // 整数位置ではなく +0.5 した半整数位置に引く必要がある。
-    // (例: 座標5のセルは [4.5, 5.5] の範囲を占める)
+    // グリッド線は「実際の画像データのピクセル境界」を示すため整数座標に引く。
+    // (背景画像は ctx.drawImage で描画されており、ピクセル境界は必ず整数座標に来るため)
     if (showGrid && zoom >= GRID_MIN_ZOOM) {
       const minX = Math.floor(-pan.x / zoom) - 1;
       const maxX = Math.ceil((w - pan.x) / zoom) + 1;
@@ -135,7 +133,7 @@ export function MapCanvas({
       ctx.save();
       ctx.lineWidth = 1;
       for (let x = minX; x <= maxX; x++) {
-        const screenX = Math.round((x + 0.5) * zoom + pan.x) + 0.5;
+        const screenX = Math.round(x * zoom + pan.x) + 0.5;
         if (screenX < -1 || screenX > w + 1) continue;
         const isMajor = x % GRID_MAJOR_INTERVAL === 0;
         ctx.strokeStyle = isMajor ? 'rgba(255, 255, 255, 0.28)' : 'rgba(255, 255, 255, 0.09)';
@@ -145,7 +143,7 @@ export function MapCanvas({
         ctx.stroke();
       }
       for (let y = minY; y <= maxY; y++) {
-        const screenY = Math.round((y + 0.5) * zoom + pan.y) + 0.5;
+        const screenY = Math.round(y * zoom + pan.y) + 0.5;
         if (screenY < -1 || screenY > h + 1) continue;
         const isMajor = y % GRID_MAJOR_INTERVAL === 0;
         ctx.strokeStyle = isMajor ? 'rgba(255, 255, 255, 0.28)' : 'rgba(255, 255, 255, 0.09)';
@@ -158,15 +156,40 @@ export function MapCanvas({
     }
 
     for (const p of points) {
-      const reading = getReadingPixel(p);
-      if (!reading) continue;
-      const screenPos = imagePixelToScreen(reading, pan.x, pan.y, zoom);
-      if (screenPos.x < -20 || screenPos.y < -20 || screenPos.x > w + 20 || screenPos.y > h + 20) continue;
+      if (!p.point) continue;
+      // 読み取り範囲ボックスは「基準ピクセル (center)」を中心に固定する。
+      // マーカーの丸は、そこから読み取りオフセット (offset) 分ずらした
+      // 実際の読み取り位置 (center + offset) に表示する。
+      // 保存されているピクセル座標は「そのピクセルの左上」を指す値のため、
+      // 実際のピクセルの中心 (見た目上の正しい位置) は +0.5 した位置になる。
+      const boxCenterImg = { x: p.point.center.x + 0.5, y: p.point.center.y + 0.5 };
+      const dotCenterImg = {
+        x: p.point.center.x + p.point.offset.x + 0.5,
+        y: p.point.center.y + p.point.offset.y + 0.5,
+      };
+      const boxScreenPos = imagePixelToScreen(boxCenterImg, pan.x, pan.y, zoom);
+      const dotScreenPos = imagePixelToScreen(dotCenterImg, pan.x, pan.y, zoom);
+      if (
+        boxScreenPos.x < -20 &&
+        dotScreenPos.x < -20 &&
+        boxScreenPos.y < -20 &&
+        dotScreenPos.y < -20
+      ) {
+        continue;
+      }
+      if (
+        boxScreenPos.x > w + 20 &&
+        dotScreenPos.x > w + 20 &&
+        boxScreenPos.y > h + 20 &&
+        dotScreenPos.y > h + 20
+      ) {
+        continue;
+      }
 
       const isSelected = p.code === selectedCode;
       const color = p.isSuspended ? TYPE_MARKER_COLOR.suspended : TYPE_MARKER_COLOR[p.type];
 
-      // 読み取り範囲 (3x3ピクセル) を種別カラーの点線枠で表示する
+      // 読み取り範囲 (3x3ピクセル、center基準) を種別カラーの点線枠で表示する
       if (showReadingArea) {
         const cellSize = zoom;
         ctx.save();
@@ -175,32 +198,55 @@ export function MapCanvas({
         ctx.globalAlpha = p.isSuspended ? 0.45 : 0.85;
         ctx.lineWidth = isSelected ? 2 : 1;
         ctx.strokeRect(
-          screenPos.x - 1.5 * cellSize,
-          screenPos.y - 1.5 * cellSize,
+          boxScreenPos.x - 1.5 * cellSize,
+          boxScreenPos.y - 1.5 * cellSize,
           cellSize * 3,
           cellSize * 3,
         );
         ctx.restore();
       }
 
+      // オフセットがある場合、基準ピクセル(小さな十字)と実読み取り位置(丸)を線で結ぶ
+      const hasOffset = p.point.offset.x !== 0 || p.point.offset.y !== 0;
+      if (hasOffset) {
+        ctx.save();
+        ctx.strokeStyle = color;
+        ctx.globalAlpha = 0.8;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(boxScreenPos.x, boxScreenPos.y);
+        ctx.lineTo(dotScreenPos.x, dotScreenPos.y);
+        ctx.stroke();
+
+        // 基準ピクセル位置に小さな十字マークを表示
+        const crossSize = 4;
+        ctx.beginPath();
+        ctx.moveTo(boxScreenPos.x - crossSize, boxScreenPos.y);
+        ctx.lineTo(boxScreenPos.x + crossSize, boxScreenPos.y);
+        ctx.moveTo(boxScreenPos.x, boxScreenPos.y - crossSize);
+        ctx.lineTo(boxScreenPos.x, boxScreenPos.y + crossSize);
+        ctx.stroke();
+        ctx.restore();
+      }
+
       ctx.beginPath();
-      ctx.arc(screenPos.x, screenPos.y, isSelected ? 6 : 4, 0, Math.PI * 2);
+      ctx.arc(dotScreenPos.x, dotScreenPos.y, isSelected ? 6 : 4, 0, Math.PI * 2);
       ctx.fillStyle = color;
       ctx.globalAlpha = p.isSuspended ? 0.5 : 0.95;
       ctx.fill();
       ctx.globalAlpha = 1;
       if (isSelected) {
-        ctx.strokeStyle = '#40d8d0';
+        ctx.strokeStyle = '#0078d4';
         ctx.lineWidth = 2;
         ctx.stroke();
 
-        // 選択中の観測点は読み取り範囲を実線・シアンで強調する
+        // 選択中の観測点は読み取り範囲を実線・シアンで強調する (center基準)
         const cellSize = zoom;
-        ctx.strokeStyle = 'rgba(64, 216, 208, 0.8)';
+        ctx.strokeStyle = 'rgba(0, 120, 212, 0.85)';
         ctx.lineWidth = 1.5;
         ctx.strokeRect(
-          screenPos.x - 1.5 * cellSize,
-          screenPos.y - 1.5 * cellSize,
+          boxScreenPos.x - 1.5 * cellSize,
+          boxScreenPos.y - 1.5 * cellSize,
           cellSize * 3,
           cellSize * 3,
         );
@@ -223,7 +269,13 @@ export function MapCanvas({
     if (!canvas) return null;
     const rect = canvas.getBoundingClientRect();
     const { pan: curPan, zoom: curZoom } = panZoomRef.current;
-    return screenToImagePixel(clientX, clientY, rect, curPan.x, curPan.y, curZoom);
+    const raw = screenToImagePixel(clientX, clientY, rect, curPan.x, curPan.y, curZoom);
+    // 背景画像上の連続座標raw は「ピクセルの中心が x.5 の位置」になる規約。
+    // drawImageの仕様上、ピクセルインデックスiは画像空間で i 以上 i+1 未満の範囲を占め、中心は i+0.5 となる。
+    // 保存するピクセル座標(center/offset)は「ピクセルインデックス」そのものを表すため、
+    // ここで -0.5 して両者の規約を一致させる。これにより、見た目のピクセル中心をクリックした
+    // 位置が、そのままそのピクセルのインデックス値として保存/比較されるようになる。
+    return { x: raw.x - 0.5, y: raw.y - 0.5 };
   }, []);
 
   const getPixelFromEvent = useCallback(
@@ -469,42 +521,43 @@ export function MapCanvas({
   }, []);
 
   return (
-    <div
-      ref={containerRef}
-      style={{ width: '100%', height: '100%', position: 'relative', overflow: 'hidden', cursor: 'crosshair' }}
-    >
-      <canvas
-        ref={canvasRef}
-        onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
-        onMouseLeave={handleMouseUp}
-        onWheel={handleWheel}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
-        onTouchCancel={handleTouchEnd}
-        style={{ display: 'block', touchAction: 'none' }}
-      />
+    <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
       <div
-        style={{
-          position: 'absolute',
-          bottom: 14,
-          left: 14,
-          background: 'rgba(28, 30, 34, 0.8)',
-          backdropFilter: 'blur(10px)',
-          WebkitBackdropFilter: 'blur(10px)',
-          border: '1px solid var(--c-separator-strong)',
-          borderRadius: 'var(--radius-pill)',
-          padding: '6px 14px',
-          fontSize: 12,
-          color: 'var(--c-label-secondary)',
-          boxShadow: 'var(--shadow-sm)',
-        }}
-        className="mono"
+        ref={containerRef}
+        style={{ flex: 1, minHeight: 0, position: 'relative', overflow: 'hidden', cursor: 'crosshair' }}
       >
-        zoom {zoom.toFixed(2)}x{showGrid && zoom < GRID_MIN_ZOOM ? ` (グリッドは${GRID_MIN_ZOOM}倍以上で表示)` : ''} ・ Alt+ドラッグ/1本指でパン
-        ・ ホイール/ピンチでズーム
+        <canvas
+          ref={canvasRef}
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
+          onMouseLeave={handleMouseUp}
+          onWheel={handleWheel}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+          onTouchCancel={handleTouchEnd}
+          style={{ display: 'block', touchAction: 'none' }}
+        />
+      </div>
+      <div
+        className="mono"
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 12,
+          background: 'var(--c-bg-1)',
+          borderTop: '1px solid var(--c-separator-strong)',
+          padding: '3px 12px',
+          fontSize: 11.5,
+          color: 'var(--c-label-secondary)',
+        }}
+      >
+        <span>ズーム: {zoom.toFixed(2)}x</span>
+        {showGrid && zoom < GRID_MIN_ZOOM && <span>グリッドは{GRID_MIN_ZOOM}倍以上で表示</span>}
+        <span style={{ marginLeft: 'auto', color: 'var(--c-label-tertiary)' }}>
+          Alt+ドラッグ/1本指でパン ・ ホイール/ピンチでズーム
+        </span>
       </div>
     </div>
   );

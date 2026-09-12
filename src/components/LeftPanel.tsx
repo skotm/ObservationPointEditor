@@ -44,7 +44,7 @@ export function LeftPanel({
         width: 320,
         minWidth: 320,
         background: 'var(--c-bg-1)',
-        borderRight: '1px solid var(--c-separator)',
+        borderRight: '1px solid var(--c-separator-strong)',
         display: 'flex',
         flexDirection: 'column',
         overflowY: 'auto',
@@ -352,19 +352,27 @@ function FilterRow({
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <div style={{ borderBottom: '1px solid var(--c-separator)', padding: '18px 20px' }}>
-      <div className="section-title" style={{ marginBottom: 12 }}>
+    <div style={{ borderBottom: '1px solid var(--c-separator-strong)' }}>
+      <div
+        className="section-title"
+        style={{
+          padding: '6px 16px',
+          background: 'var(--c-bg-1)',
+          borderBottom: '1px solid var(--c-separator)',
+          borderTop: '1px solid var(--c-separator)',
+        }}
+      >
         {title}
       </div>
-      {children}
+      <div style={{ padding: '12px 16px' }}>{children}</div>
     </div>
   );
 }
 
 function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <div style={{ marginBottom: 12 }}>
-      <div style={{ fontSize: 11, color: 'var(--c-label-tertiary)', marginBottom: 5 }}>{label}</div>
+    <div style={{ marginBottom: 10 }}>
+      <div style={{ fontSize: 11, color: 'var(--c-label-tertiary)', marginBottom: 4 }}>{label}</div>
       {children}
     </div>
   );

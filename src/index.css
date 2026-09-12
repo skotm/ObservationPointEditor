@@ -3,58 +3,54 @@
 :root {
   /* ============================================================
    * カラーシステム
-   * Apple Human Interface Guidelines の「階層化されたシステム背景色」
-   * (systemBackground / secondarySystemBackground / tertiarySystemBackground)
-   * の考え方を踏襲したダークパレット。層が上がるほど明るくなり、
-   * 奥行き(depth)を表現する。
+   * Windows / Office (Fluent Design, Excel) を参考にしたライトテーマ。
+   * 白ベースの背景に、細い実線の罫線で領域を区切るフラットな構成。
    * ============================================================ */
-  --c-bg-0: #000000;           /* 最背面 (systemBackground 相当) */
-  --c-bg-1: #121316;           /* secondarySystemBackground 相当: ツールバー・サイドパネル */
-  --c-bg-2: #1c1e22;           /* tertiarySystemBackground 相当: カード・入力欄 */
-  --c-bg-3: #26292e;           /* 選択状態・ホバー時の一段明るい層 */
-  --c-bg-elevated: #202226;    /* モーダル・ポップオーバーなど最前面レイヤー */
+  --c-bg-0: #faf9f8;            /* アプリ全体の背景 (Office Neutral Lighter) */
+  --c-bg-1: #f3f2f1;            /* ツールバー・サイドパネルの背景 */
+  --c-bg-2: #ffffff;            /* カード・入力欄・テーブルの背景 */
+  --c-bg-3: #e8f1fb;            /* 選択状態・ホバー時の背景 (Office のアクセント薄色) */
+  --c-bg-elevated: #ffffff;     /* モーダル・ダイアログ */
 
-  --c-separator: rgba(255, 255, 255, 0.09);
-  --c-separator-strong: rgba(255, 255, 255, 0.16);
+  --c-separator: #e1dfdd;
+  --c-separator-strong: #c8c6c4;
 
-  --c-label: #f5f6f7;              /* label (主要テキスト) */
-  --c-label-secondary: #9ba3ad;    /* secondaryLabel */
-  --c-label-tertiary: #6b7480;     /* tertiaryLabel */
-  --c-label-quaternary: #454a52;   /* quaternaryLabel */
+  --c-label: #201f1e;               /* 主要テキスト */
+  --c-label-secondary: #484644;     /* 補足テキスト */
+  --c-label-tertiary: #737170;      /* さらに弱いテキスト */
+  --c-label-quaternary: #a19f9d;
 
-  /* システムカラー相当 (iOS/macOS の systemOrange, systemRed, systemBlue 等) */
-  --c-accent: #ff9f43;
-  --c-accent-pressed: #e8862a;
-  --c-accent-soft: rgba(255, 159, 67, 0.16);
-  --c-blue: #4da3ff;
-  --c-cyan: #40d8d0;
-  --c-red: #ff5470;
-  --c-red-soft: rgba(255, 84, 112, 0.14);
-  --c-green: #35d488;
-  --c-green-soft: rgba(53, 212, 136, 0.14);
+  /* システムカラー (Excel/Office 準拠) */
+  --c-accent: #217346;              /* Excel グリーン */
+  --c-accent-pressed: #164b2e;
+  --c-accent-soft: #e6f2ec;
+  --c-blue: #0078d4;                /* Office アクセントブルー (フォーカス・選択) */
+  --c-cyan: #0078d4;
+  --c-red: #d13438;
+  --c-red-soft: #fdedee;
+  --c-green: #107c10;
+  --c-green-soft: #dff6dd;
 
-  --c-knet: #ffab40;
-  --c-kiknet: #ff5470;
-  --c-snet: #4da3ff;
-  --c-suspended: #7b8290;
+  --c-knet: #ca5010;
+  --c-kiknet: #d13438;
+  --c-snet: #0078d4;
+  --c-suspended: #a19f9d;
 
   /* ============================================================
-   * タイポグラフィ: OS標準フォント (San Francisco 相当) を優先し、
-   * フォールバックとして和文フォントを指定する。
+   * タイポグラフィ: Windows標準UIフォント (Segoe UI) を優先。
    * ============================================================ */
   --font-ui:
-    -apple-system, BlinkMacSystemFont, 'SF Pro JP', 'Hiragino Sans', 'Zen Kaku Gothic New', system-ui,
-    sans-serif;
-  --font-mono: ui-monospace, 'SF Mono', 'JetBrains Mono', 'SFMono-Regular', Menlo, monospace;
+    'Segoe UI', 'Yu Gothic UI', 'Meiryo UI', 'Zen Kaku Gothic New', system-ui,
+    -apple-system, sans-serif;
+  --font-mono: 'Consolas', 'Cascadia Mono', 'JetBrains Mono', ui-monospace, monospace;
 
   /* ============================================================
-   * 形状・間隔・モーション
-   * HIGの「連続した角丸 (continuous corner)」と、控えめで自然な
-   * モーションの考え方に合わせた共通トークン。
+   * 形状・間隔
+   * Office のフラットデザインに合わせ、角丸をごく僅かに留める。
    * ============================================================ */
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
+  --radius-sm: 2px;
+  --radius-md: 3px;
+  --radius-lg: 4px;
   --radius-pill: 999px;
 
   --space-1: 4px;
@@ -64,18 +60,17 @@
   --space-5: 20px;
   --space-6: 24px;
 
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35);
-  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
-  --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.55);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.12);
+  --shadow-md: 0 2px 6px rgba(0, 0, 0, 0.16);
+  --shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.22);
 
-  --ease-standard: cubic-bezier(0.22, 0.61, 0.36, 1);
-  --duration-fast: 120ms;
-  --duration-normal: 200ms;
+  --ease-standard: cubic-bezier(0.2, 0, 0.2, 1);
+  --duration-fast: 80ms;
+  --duration-normal: 120ms;
 
-  /* タッチターゲットの最小サイズ (HIG推奨: 44pt角) */
-  --hit-target-min: 44px;
+  --hit-target-min: 32px;
 
-  color-scheme: dark;
+  color-scheme: light;
 }
 
 * {
@@ -93,10 +88,9 @@ body {
   background: var(--c-bg-0);
   color: var(--c-label);
   font-family: var(--font-ui);
-  font-size: 14px;
-  line-height: 1.45;
+  font-size: 13px;
+  line-height: 1.4;
   -webkit-font-smoothing: antialiased;
-  text-rendering: optimizeLegibility;
 }
 
 button {
@@ -108,13 +102,13 @@ button:focus-visible,
 input:focus-visible,
 select:focus-visible,
 [tabindex]:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 3px rgba(77, 163, 255, 0.5);
+  outline: 2px solid var(--c-blue);
+  outline-offset: -1px;
   border-radius: var(--radius-sm);
 }
 
 ::selection {
-  background: var(--c-accent-soft);
+  background: #cce4f7;
 }
 
 input,
@@ -123,26 +117,27 @@ select {
   border: 1px solid var(--c-separator-strong);
   color: var(--c-label);
   border-radius: var(--radius-sm);
-  padding: 8px 10px;
-  font-size: 13px;
-  transition: border-color var(--duration-fast) var(--ease-standard), background var(--duration-fast) var(--ease-standard);
+  padding: 5px 8px;
+  font-size: 12.5px;
+  transition: border-color var(--duration-fast) var(--ease-standard);
 }
 
 input:hover,
 select:hover {
-  border-color: rgba(255, 255, 255, 0.28);
+  border-color: #8a8886;
 }
 
 input:focus,
 select:focus {
   border-color: var(--c-blue);
-  background: var(--c-bg-3);
+  outline: 1px solid var(--c-blue);
+  outline-offset: -1px;
 }
 
 input[type='checkbox'] {
   accent-color: var(--c-accent);
-  width: 17px;
-  height: 17px;
+  width: 15px;
+  height: 15px;
 }
 
 .mono {
@@ -151,56 +146,51 @@ input[type='checkbox'] {
 }
 
 /* ============================================================
- * ボタン共通スタイル
- * HIG: 明瞭な階層 (Prominent / Default / Plain)、
- * 十分なタップ領域、押下時のフィードバックを持たせる。
+ * ボタン共通スタイル (Office リボン風: フラット・角ばった見た目)
  * ============================================================ */
 .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
-  min-height: 34px;
-  padding: 7px 14px;
-  font-size: 13px;
-  font-weight: 500;
+  min-height: 28px;
+  padding: 5px 12px;
+  font-size: 12.5px;
+  font-weight: 400;
   color: var(--c-label);
-  background: var(--c-bg-3);
+  background: var(--c-bg-2);
   border: 1px solid var(--c-separator-strong);
   border-radius: var(--radius-sm);
   cursor: pointer;
   white-space: nowrap;
-  transition:
-    background var(--duration-fast) var(--ease-standard),
-    border-color var(--duration-fast) var(--ease-standard),
-    transform var(--duration-fast) var(--ease-standard),
-    opacity var(--duration-fast) var(--ease-standard);
+  transition: background var(--duration-fast) var(--ease-standard), border-color var(--duration-fast) var(--ease-standard);
 }
 
 .btn:hover:not(:disabled) {
-  background: #32353b;
-  border-color: rgba(255, 255, 255, 0.24);
+  background: #e5f1fb;
+  border-color: #c7e0f4;
 }
 
 .btn:active:not(:disabled) {
-  transform: scale(0.97);
+  background: #cce4f7;
+  border-color: #99cbea;
 }
 
 .btn:disabled {
-  opacity: 0.4;
+  opacity: 0.45;
   cursor: not-allowed;
 }
 
 .btn-primary {
   background: var(--c-accent);
   border-color: var(--c-accent);
-  color: #241300;
+  color: #ffffff;
   font-weight: 600;
 }
 
 .btn-primary:hover:not(:disabled) {
-  background: #ffb066;
-  border-color: #ffb066;
+  background: #1a5c38;
+  border-color: #1a5c38;
 }
 
 .btn-primary:active:not(:disabled) {
@@ -208,7 +198,7 @@ input[type='checkbox'] {
 }
 
 .btn-danger {
-  background: transparent;
+  background: #ffffff;
   border-color: var(--c-red);
   color: var(--c-red);
 }
@@ -224,22 +214,22 @@ input[type='checkbox'] {
 }
 
 .btn-plain:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--c-bg-1);
   color: var(--c-label);
 }
 
 /* ============================================================
- * iOS 風トグルスイッチ
+ * トグルスイッチ (現行のiOS風デザインを維持)
  * ============================================================ */
 .toggle {
   position: relative;
   display: inline-flex;
   align-items: center;
-  width: 42px;
-  height: 26px;
+  width: 38px;
+  height: 22px;
   flex: none;
   border-radius: var(--radius-pill);
-  background: var(--c-bg-3);
+  background: #c8c6c4;
   border: 1px solid var(--c-separator-strong);
   cursor: pointer;
   transition: background var(--duration-normal) var(--ease-standard), border-color var(--duration-normal) var(--ease-standard);
@@ -254,8 +244,8 @@ input[type='checkbox'] {
   position: absolute;
   top: 2px;
   left: 2px;
-  width: 20px;
-  height: 20px;
+  width: 16px;
+  height: 16px;
   border-radius: 50%;
   background: #fff;
   box-shadow: var(--shadow-sm);
@@ -285,34 +275,33 @@ input[type='checkbox'] {
 }
 
 .section-title {
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  color: var(--c-label-tertiary);
-  text-transform: uppercase;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: var(--c-label-secondary);
 }
 
 /* ============================================================
- * スクロールバー (WebKit)
+ * スクロールバー (WebKit) - Windows標準に近い角ばった見た目
  * ============================================================ */
 ::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
+  width: 14px;
+  height: 14px;
 }
 
 ::-webkit-scrollbar-track {
-  background: transparent;
+  background: var(--c-bg-1);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.14);
-  border-radius: var(--radius-pill);
-  border: 2px solid transparent;
+  background: #c8c6c4;
+  border-radius: 0;
+  border: 3px solid var(--c-bg-1);
   background-clip: padding-box;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.24);
+  background: #a19f9d;
   background-clip: padding-box;
 }
 
