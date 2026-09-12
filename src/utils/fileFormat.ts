@@ -46,7 +46,9 @@ function extractOffset(rawPoint: unknown): { x: number; y: number } {
  * をそのまま維持する。raw が無い (新規追加した観測点) 場合は標準形式で出力する。
  */
 export function toJson(point: CommonObservationPoint): Record<string, unknown> {
-  const base: Record<string, unknown> = point.raw ? structuredClone(point.raw) : {};
+  // structuredClone は件数が多いと重いため、トップレベルのみコピーする浅いコピーで十分。
+  // (このあと上書きするのはトップレベルのフィールドのみのため)
+  const base: Record<string, unknown> = point.raw ? { ...point.raw } : {};
 
   base.type = point.type;
   base.code = point.code;
@@ -134,7 +136,9 @@ export function fromJson(json: unknown, lineHint?: number): CommonObservationPoi
       : undefined,
     isSuspended: Boolean(rawJson.is_suspended),
     // 元のJSON構造をまるごと保持しておき、保存時にこれをベースに復元する
-    raw: structuredClone(rawJson),
+    // JSON.parse 直後のオブジェクトは他から参照されていないため、
+    // structuredClone による複製は不要 (件数が多いと読み込みが重くなるため)。
+    raw: rawJson,
   };
 }
 

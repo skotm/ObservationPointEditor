@@ -35,6 +35,9 @@ const HIT_RADIUS_PX = 10;
 const TOUCH_HIT_RADIUS_PX = 22;
 /** このズーム倍率未満ではグリッドが密集しすぎて見づらいため非表示にする */
 const GRID_MIN_ZOOM = 4;
+/** このズーム倍率未満では読み取り範囲の枠が小さすぎて意味を成さず、
+ * 観測点数が多いと描画負荷も大きいため非表示にする */
+const READING_AREA_MIN_ZOOM = 2;
 /** 10ピクセルごとに少し目立つ「主グリッド線」を引く間隔 */
 const GRID_MAJOR_INTERVAL = 10;
 
@@ -74,6 +77,33 @@ export function MapCanvas({
   const draggingRef = useRef<{ code: string; part: 'center' } | null>(null);
   const panningRef = useRef<PanState | null>(null);
   const pinchRef = useRef<PinchState | null>(null);
+  // ドラッグ中の座標更新をアニメーションフレームに合わせて間引くための仕組み。
+  // マウス/タッチのmoveイベントは画面更新より高頻度で発火することがあり、
+  // 毎回 onMovePoint (=観測点配列全体の再生成+全体再描画) を呼ぶと、
+  // 観測点数が多い場合にアプリ全体が重くなる。1フレームにつき最新の1回だけ反映する。
+  const pendingMoveRef = useRef<{ code: string; pixel: { x: number; y: number } } | null>(null);
+  const moveFrameRef = useRef<number | null>(null);
+
+  const scheduleMovePoint = useCallback(
+    (code: string, pixel: { x: number; y: number }) => {
+      pendingMoveRef.current = { code, pixel };
+      if (moveFrameRef.current == null) {
+        moveFrameRef.current = requestAnimationFrame(() => {
+          moveFrameRef.current = null;
+          const pending = pendingMoveRef.current;
+          pendingMoveRef.current = null;
+          if (pending) onMovePoint(pending.code, pending.pixel);
+        });
+      }
+    },
+    [onMovePoint],
+  );
+
+  useEffect(() => {
+    return () => {
+      if (moveFrameRef.current != null) cancelAnimationFrame(moveFrameRef.current);
+    };
+  }, []);
   // 最新の pan/zoom をイベントハンドラ内から同期的に参照するための ref
   // (setState は非同期のため、同一ジェスチャー内で連続して読み書きする場合に必要)
   const panZoomRef = useRef({ pan, zoom });
@@ -155,6 +185,10 @@ export function MapCanvas({
       ctx.restore();
     }
 
+    // 点線パターンはズーム倍率のみに依存するためループの外で1回だけ計算する
+    const dashPattern: [number, number] = [Math.max(2, zoom * 0.3), Math.max(2, zoom * 0.3)];
+    const canShowReadingArea = showReadingArea && zoom >= READING_AREA_MIN_ZOOM;
+
     for (const p of points) {
       if (!p.point) continue;
       // 読み取り範囲ボックスは「基準ピクセル (center)」を中心に固定する。
@@ -188,12 +222,14 @@ export function MapCanvas({
 
       const isSelected = p.code === selectedCode;
       const color = p.isSuspended ? TYPE_MARKER_COLOR.suspended : TYPE_MARKER_COLOR[p.type];
+      const hasOffset = p.point.offset.x !== 0 || p.point.offset.y !== 0;
 
-      // 読み取り範囲 (3x3ピクセル、center基準) を種別カラーの点線枠で表示する
-      if (showReadingArea) {
+      // 読み取り範囲 (3x3ピクセル、center基準) を種別カラーの点線枠で表示する。
+      // ズームアウト時 (全体表示など) は枠が意味を成さず描画負荷も大きいため省略する。
+      // (save/restore は呼び出しコストが高いため、必要なプロパティのみ都度設定する)
+      if (canShowReadingArea) {
         const cellSize = zoom;
-        ctx.save();
-        ctx.setLineDash([Math.max(2, zoom * 0.3), Math.max(2, zoom * 0.3)]);
+        ctx.setLineDash(dashPattern);
         ctx.strokeStyle = color;
         ctx.globalAlpha = p.isSuspended ? 0.45 : 0.85;
         ctx.lineWidth = isSelected ? 2 : 1;
@@ -203,13 +239,11 @@ export function MapCanvas({
           cellSize * 3,
           cellSize * 3,
         );
-        ctx.restore();
       }
 
       // オフセットがある場合、基準ピクセル(小さな十字)と実読み取り位置(丸)を線で結ぶ
-      const hasOffset = p.point.offset.x !== 0 || p.point.offset.y !== 0;
-      if (hasOffset) {
-        ctx.save();
+      if (hasOffset && canShowReadingArea) {
+        ctx.setLineDash([]);
         ctx.strokeStyle = color;
         ctx.globalAlpha = 0.8;
         ctx.lineWidth = 1;
@@ -226,9 +260,9 @@ export function MapCanvas({
         ctx.moveTo(boxScreenPos.x, boxScreenPos.y - crossSize);
         ctx.lineTo(boxScreenPos.x, boxScreenPos.y + crossSize);
         ctx.stroke();
-        ctx.restore();
       }
 
+      ctx.setLineDash([]);
       ctx.beginPath();
       ctx.arc(dotScreenPos.x, dotScreenPos.y, isSelected ? 6 : 4, 0, Math.PI * 2);
       ctx.fillStyle = color;
@@ -240,7 +274,7 @@ export function MapCanvas({
         ctx.lineWidth = 2;
         ctx.stroke();
 
-        // 選択中の観測点は読み取り範囲を実線・シアンで強調する (center基準)
+        // 選択中の観測点は読み取り範囲を実線・青で強調する (center基準)
         const cellSize = zoom;
         ctx.strokeStyle = 'rgba(0, 120, 212, 0.85)';
         ctx.lineWidth = 1.5;
@@ -336,13 +370,13 @@ export function MapCanvas({
 
       if (draggingRef.current) {
         if (!pixel) return;
-        onMovePoint(draggingRef.current.code, {
-            x: roundToPrecision(pixel.x, decimalMode),
-            y: roundToPrecision(pixel.y, decimalMode),
-          });
+        scheduleMovePoint(draggingRef.current.code, {
+          x: roundToPrecision(pixel.x, decimalMode),
+          y: roundToPrecision(pixel.y, decimalMode),
+        });
       }
     },
-    [decimalMode, getPixelFromEvent, onDebugInfo, onMovePoint],
+    [decimalMode, getPixelFromEvent, onDebugInfo, scheduleMovePoint],
   );
 
   const handleMouseUp = useCallback(() => {
@@ -489,14 +523,14 @@ export function MapCanvas({
           e.preventDefault();
           const pixel = getPixelFromPoint(touch.clientX, touch.clientY);
           if (!pixel) return;
-          onMovePoint(draggingRef.current.code, {
+          scheduleMovePoint(draggingRef.current.code, {
             x: roundToPrecision(pixel.x, decimalMode),
             y: roundToPrecision(pixel.y, decimalMode),
           });
         }
       }
     },
-    [decimalMode, getPixelFromPoint, onMovePoint],
+    [decimalMode, getPixelFromPoint, scheduleMovePoint],
   );
 
   const handleTouchEnd = useCallback((e: ReactTouchEvent) => {
