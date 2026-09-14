@@ -235,7 +235,7 @@ function Btn({
       onClick={onClick}
       disabled={disabled}
       aria-label={ariaLabel}
-      className={variant === 'primary' ? 'btn btn-primary' : 'btn'}
+      className={variant === 'primary' ? 'ribbon-btn ribbon-btn-primary' : 'ribbon-btn'}
     >
       {children}
     </button>

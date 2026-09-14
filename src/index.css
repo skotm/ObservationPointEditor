@@ -219,6 +219,56 @@ input[type='checkbox'] {
 }
 
 /* ============================================================
+ * ヘッダー(リボンツールバー)専用ボタン
+ * 個々のボタンは枠線・背景を持たず、ボタングループの境界線のみを表示する。
+ * ============================================================ */
+.ribbon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 28px;
+  padding: 5px 10px;
+  font-size: 12.5px;
+  font-weight: 400;
+  color: var(--c-label);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background var(--duration-fast) var(--ease-standard), border-color var(--duration-fast) var(--ease-standard);
+}
+
+.ribbon-btn:hover:not(:disabled) {
+  background: #e5f1fb;
+  border-color: #c7e0f4;
+}
+
+.ribbon-btn:active:not(:disabled) {
+  background: #cce4f7;
+  border-color: #99cbea;
+}
+
+.ribbon-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.ribbon-btn-primary {
+  color: var(--c-accent);
+  font-weight: 600;
+}
+
+.ribbon-btn-primary:hover:not(:disabled) {
+  background: var(--c-accent-soft);
+}
+
+.ribbon-btn-primary:active:not(:disabled) {
+  background: #d5ebe0;
+}
+
+/* ============================================================
  * トグルスイッチ (現行のiOS風デザインを維持)
  * ============================================================ */
 .toggle {
