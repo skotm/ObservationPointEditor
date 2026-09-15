@@ -116,12 +116,12 @@ export function Toolbar({
         </RibbonGroup>
 
         <RibbonGroup label="編集" style={{ marginLeft: 'auto' }}>
-          <Btn onClick={onUndo} disabled={!canUndo} aria-label="元に戻す">
-            ↺ 元に戻す
-          </Btn>
-          <Btn onClick={onRedo} disabled={!canRedo} aria-label="やり直す">
-            ↻ やり直す
-          </Btn>
+          <IconBtn onClick={onUndo} disabled={!canUndo} aria-label="元に戻す">
+            ↺
+          </IconBtn>
+          <IconBtn onClick={onRedo} disabled={!canRedo} aria-label="やり直す">
+            ↻
+          </IconBtn>
         </RibbonGroup>
       </div>
 
@@ -197,12 +197,12 @@ function RibbonGroup({
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'stretch',
-        padding: '0 10px',
+        padding: '0 8px',
         borderRight: '1px solid var(--c-separator-strong)',
         ...style,
       }}
     >
-      <div style={{ display: 'flex', gap: 4, marginBottom: 3 }}>{children}</div>
+      <div style={{ display: 'flex', gap: 1, marginBottom: 3 }}>{children}</div>
       <div
         style={{
           fontSize: 10,
@@ -214,6 +214,31 @@ function RibbonGroup({
         {label}
       </div>
     </div>
+  );
+}
+
+function IconBtn({
+  children,
+  onClick,
+  disabled,
+  'aria-label': ariaLabel,
+}: {
+  children: ReactNode;
+  onClick: () => void;
+  disabled?: boolean;
+  'aria-label'?: string;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      aria-label={ariaLabel}
+      title={ariaLabel}
+      className="ribbon-btn"
+      style={{ width: 30, padding: 0, fontSize: 16 }}
+    >
+      {children}
+    </button>
   );
 }
 
